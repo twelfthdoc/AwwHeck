@@ -1,0 +1,14 @@
+# for information about editor config see
+# https://editorconfig.org/
+
+# for C# specific formatting see
+# https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/code-style-rule-options
+
+root = true
+
+# C# files:
+[*.cs]
+indent_style = tab
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
