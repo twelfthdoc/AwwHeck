@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Assets.Scripts.Services.Singletons
+namespace Assets.Scripts.Services
 {
 	public class Settings : SingletonBase
 	{

@@ -5,13 +5,10 @@ public class Card: MonoBehaviour
 {
 	public Sprite cardBackground;
 	public Sprite cardSprite;
-	public TextMeshPro cardText;
+	//public TextMeshPro cardText;
 
 	public CardRank Rank { get; set; }
 	public CardSuit Suit { get; set; }
 
-	public Card()
-	{
-		cardText.text = Rank.ToString();
-	}
+	public override string ToString() => $"{Rank} of {Suit}";
 }
