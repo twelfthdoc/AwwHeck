@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-public class Card: MonoBehaviour
+public class Card : MonoBehaviour
 {
 	public Sprite cardBackground;
 	public Sprite cardSprite;

@@ -2,18 +2,25 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
+using UnityEngine;
 using Assets.Scripts.Services;
 
 namespace Assets.Scripts.Cards
 {
-	public class CardDeck
+	public class CardDeck : MonoBehaviour
 	{
-		public IList<Card> Deck { get; set; }
 		private readonly IList<Card> newDeck;
+		private static readonly System.Random seed = new();
 
-		private static readonly Random seed = new();
+		public IList<Card> Deck { get; set; }
+		public GameObject CardPrefab;
 
 		public CardDeck()
+		{
+			
+		}
+
+		public void Start()
 		{
 			NewDeck();
 			ShuffleDeck();
@@ -30,20 +37,28 @@ namespace Assets.Scripts.Cards
 			{
 				foreach (CardSuit suit in suits)
 				{
-					newDeck.Add(new()
-					{
-						Rank = rank,
-						Suit = suit,
-						cardSprite = ServiceLocator.GetSingleton<ResourcesSingleton>().Sprites
-							.FirstOrDefault(s => s.name == $"Cards/{suit}/{rank}")
-
-						// Alternative code for Alt Sprite Tens
-							//cardSprite = rank == CardRank.Ten ?
-							//	ServiceLocator.GetSingleton<ResourcesSingleton>().Sprites.FirstOrDefault(s => s.name == $"Cards/{suit}/Ten_(Alt)") :
-							//	ServiceLocator.GetSingleton<ResourcesSingleton>().Sprites.FirstOrDefault(s => s.name == $"Cards/{suit}/{rank}")
-					});
+					CreateCard(rank, suit);
 				}
 			}
+		}
+
+		private void CreateCard(CardRank rank, CardSuit suit)
+		{
+			var cardObject = Instantiate(CardPrefab, transform);
+
+			var card = cardObject.GetComponent<Card>();
+			card.Rank = rank;
+			card.Suit = suit;
+			card.cardSprite = ServiceLocator.GetSingleton<ResourcesSingleton>().Sprites
+					.FirstOrDefault(s => s.name == $"Cards/{suit}/{rank}");
+
+			// Alternative code for Alt Sprite Tens
+			// card.cardSprite = rank == CardRank.Ten ?
+			//		ServiceLocator.GetSingleton<ResourcesSingleton>().Sprites.FirstOrDefault(s => s.name == $"Cards/{suit}/Ten_(Alt)") :
+			//		ServiceLocator.GetSingleton<ResourcesSingleton>().Sprites.FirstOrDefault(s => s.name == $"Cards/{suit}/{rank}")
+
+
+			newDeck.Add(card);
 		}
 
 		public void Deal()
