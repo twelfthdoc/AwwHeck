@@ -6,11 +6,10 @@ public class Hand : MonoBehaviour
 {
 	public int Id { get; set; }
 	public bool IsPlayer => Id == 0;
-	//public Player Owner;
 
 	public IList<Card> Cards;
 
-	public Hand()
+	public void Awake()
 	{
 		Cards = new List<Card>();
 	}

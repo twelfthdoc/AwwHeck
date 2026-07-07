@@ -1,29 +1,28 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Assets.Scripts.Menus
+public class MainMenu : Menu
 {
-	public class MainMenu : MonoBehaviour
+	[SerializeField] private Menu settingsMenu;
+
+	public void StartGame()
 	{
-		public void StartGame()
-		{
-			SceneManager.LoadScene("GameScene");
-		}
+		SceneManager.LoadScene("Game");
+	}
 
-		public void StartTutorial()
-		{
-			SceneManager.LoadScene("TutorialScene");
-		}
+	public void StartTutorial()
+	{
+		SceneManager.LoadScene("Tutorial");
+	}
 
-		public void GoToSettings()
-		{
-			//
-		}
+	public void GoToSettings()
+	{
+		ServiceLocator.GetManager<MenuManager>().OpenMenu(settingsMenu);
+	}
 
-		public void Quit()
-		{
-			Debug.Log("Quit button pressed!");
-			Application.Quit();
-		}
+	public void Quit()
+	{
+		Debug.Log("Quit button pressed!");
+		Application.Quit();
 	}
 }
