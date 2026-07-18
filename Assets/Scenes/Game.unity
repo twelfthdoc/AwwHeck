@@ -561,7 +561,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fffab8e186533a845a0a929b6929ebeb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.Services.GameManager
-  HandSize: 5
+  handSize: 0
+  cardBack: {fileID: 21300000, guid: fc881f65f307cdd4e8f4ffad93298e68, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

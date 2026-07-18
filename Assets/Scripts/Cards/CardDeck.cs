@@ -3,22 +3,24 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CardDeck : MonoBehaviour
 {
-	private readonly IList<Card> newDeck;
+	private readonly IList<Card> newDeck = new List<Card>();
 	private static readonly System.Random seed = new();
 
-	public IList<Card> Deck { get; set; }
-	public GameObject CardPrefab;
+	public IList<Card> Cards { get; set; } = new List<Card>();
+	public GameObject cardPrefab;
+	public Sprite cardBackground;
 
-	public void Start()
+	public void Awake()
 	{
 		NewDeck();
 		ShuffleDeck();
 	}
 
-	public void ShuffleDeck() => Deck = newDeck.OrderBy(_ => seed.Next()).ToList();
+	public void ShuffleDeck() => Cards = Cards.OrderBy(_ => seed.Next()).ToList();
 
 	private void NewDeck()
 	{
@@ -32,41 +34,68 @@ public class CardDeck : MonoBehaviour
 				CreateCard(rank, suit);
 			}
 		}
+
+		Cards = newDeck;
 	}
 
 	private void CreateCard(CardRank rank, CardSuit suit)
 	{
-		var cardObject = Instantiate(CardPrefab, transform);
+		var cardObject = Instantiate(cardPrefab, transform);
 
 		var card = cardObject.GetComponent<Card>();
 		card.Rank = rank;
 		card.Suit = suit;
-		card.cardSprite = ServiceLocator.GetSingleton<Resources>().Sprites
-				.FirstOrDefault(s => s.name == $"Cards/{suit}/{rank}");
+		cardObject.name = card.ToString();
 
-		// Alternative code for Alt Sprite Tens
-		// card.cardSprite = rank == CardRank.Ten ?
-		//		ServiceLocator.GetSingleton<Resources>().Sprites.FirstOrDefault(s => s.name == $"Cards/{suit}/Ten_(Alt)") :
-		//		ServiceLocator.GetSingleton<Resources>().Sprites.FirstOrDefault(s => s.name == $"Cards/{suit}/{rank}")
-
+		cardObject.GetComponent<SpriteRenderer>().sprite =
+			rank == CardRank.Ten && ServiceLocator.GetSingleton<Settings>().displayTenAsLetter ?
+			   ServiceLocator.GetSingleton<Resources>().Sprites.FirstOrDefault(s => s.name == $"{suit} Ten (Alt)") :
+			   ServiceLocator.GetSingleton<Resources>().Sprites.FirstOrDefault(s => s.name == $"{suit} {rank}");
 
 		newDeck.Add(card);
 	}
 
-	public void Deal()
+	public void Deal(int handSize)
 	{
-		var handSize = ServiceLocator.GetManager<GameManager>().handSize;
-
 		foreach (var hand in ServiceLocator.GetManager<GameManager>().GetHands())
 		{
-			hand.Cards.AddRange(Deck.Take(handSize));
-			Deck = Deck.Skip(handSize).ToList();
+			hand.Cards.AddRange(Cards.Take(handSize));
+			Cards = Cards.Skip(handSize).ToList();
 		}
 
 		UpdateTrumpSuit();
 	}
 
-	public Card Peek() => Deck.First();
+	public Card GetSpecificCard(Card card) => GetSpecificCard(card.Rank, card.Suit);
 
-	public void UpdateTrumpSuit() => CardExtensions.UpdateTrumpSuit(Peek().Suit);
+	public Card GetSpecificCard(CardRank rank, CardSuit suit)
+	{
+		var foundCard = Cards.FirstOrDefault(o => o.Rank == rank && o.Suit == suit);
+
+		if (foundCard != null)
+		{
+			Cards.Remove(foundCard);
+			Destroy(foundCard.gameObject);
+		}
+
+		return foundCard;
+	}
+
+	public Card Peek() => Cards.First();
+
+	public void UpdateTrumpSuit()
+	{
+		CardExtensions.UpdateTrumpSuit(Peek().Suit);
+
+		gameObject.GetComponent<Image>().sprite = cardBackground;
+		var card = GetSpecificCard(Peek());
+
+		var instance = Instantiate(card, transform.parent);
+		instance.name = card.name;
+		instance.gameObject.GetComponent<SpriteRenderer>().enabled = true;
+		instance.gameObject.GetComponent<SpriteRenderer>().sortingOrder++;
+		instance.gameObject.GetComponentsInChildren<SpriteRenderer>().First(o => o.name == "Background").sortingOrder++;
+
+		gameObject.GetComponentInChildren<Button>().interactable = false;
+	}
 }

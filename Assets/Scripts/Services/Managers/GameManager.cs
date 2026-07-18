@@ -1,30 +1,24 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : ManagerBase
 {
-	protected ICollection<Hand> Hands;
 	protected int _maxHandSize;
-	protected CardDeck _deck;
 
 	public int handSize;
+	public Sprite cardBack;
 
+	public ICollection<Hand> Hands { get; protected set; }
 	public string GameMode { get; protected set; }
 	public int RoundNumber { get; protected set; } = 1;
 
 	public virtual void Awake()
 	{
 		// Create Hands
-		Hands = new List<Hand>
-		{
-			new() { Id = 0 }, // South - the Player
-			new() { Id = 1 }, // West - NPC 1
-			new() { Id = 2 }, // North - NPC 2
-			new() { Id = 3 }  // East - NPC 3
-		};
-
-		// Create Deck
-		_deck = new();
+		Hands = FindFirstObjectByType<Canvas>().GetComponentsInChildren<Hand>();
 
 		// GameMode is determined by the settings/pre-game game mode selection
 		GameMode = ServiceLocator.GetSingleton<Settings>().gameMode;
@@ -32,6 +26,11 @@ public class GameManager : ManagerBase
 		// GameMode determines hand size and maximum hand size
 		switch (GameMode)
 		{
+			case "Tutorial":
+				// This should never happen! Tutorial Manager explicitly overrides these settings
+				handSize = 5;
+				_maxHandSize = 5;
+				break;
 			default:
 				handSize = 5;
 				_maxHandSize = 10;
@@ -41,4 +40,7 @@ public class GameManager : ManagerBase
 
 	public ICollection<Hand> GetHands() => Hands;
 	public Hand GetPlayerHand() => Hands.First(h => h.IsPlayer);
+
+	public void DealCards(int handSize) => ServiceLocator.GetManager<RoundManager>().DealCards(handSize);
+
 }

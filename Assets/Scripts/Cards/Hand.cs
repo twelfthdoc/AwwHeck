@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class Hand : MonoBehaviour
 {
-	public int Id { get; set; }
-	public bool IsPlayer => Id == 0;
+	public int Id;
+	public bool IsPlayer => Id == (int)PlayerPosition.South;
 
 	public IList<Card> Cards;
 
@@ -22,6 +22,10 @@ public class Hand : MonoBehaviour
 		}
 
 		Cards.Add(card);
+
+		var newCard = Instantiate(card, transform);
+		newCard.name = card.name;
+
 		return true;
 	}
 
@@ -36,11 +40,19 @@ public class Hand : MonoBehaviour
 			return false;
 		}
 
-		return Cards.Remove(c);
+		Cards.Remove(c);
+		Destroy(c.gameObject);
+
+		return true;
 	}
 
 	public void EmptyHand()
 	{
+		foreach (var card in Cards)
+		{
+			Destroy(card.gameObject);
+		}
+
 		Cards.Clear();
 	}
 
@@ -48,4 +60,12 @@ public class Hand : MonoBehaviour
 	{
 		Cards = Cards.OrderBy(c => c.Suit).ThenByDescending(c => c.Rank).ToList();
 	}
+}
+
+public enum PlayerPosition
+{
+	South = 0,
+	West,
+	North,
+	East
 }
