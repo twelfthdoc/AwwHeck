@@ -41,8 +41,7 @@ public class CardDeck : MonoBehaviour
 	private void CreateCard(CardRank rank, CardSuit suit)
 	{
 		var cardObject = Instantiate(cardPrefab, transform);
-
-		var card = cardObject.GetComponent<Card>();
+		var card = cardObject.AddComponent<Card>();
 		card.Rank = rank;
 		card.Suit = suit;
 		cardObject.name = card.ToString();
@@ -72,11 +71,13 @@ public class CardDeck : MonoBehaviour
 	{
 		var foundCard = Cards.FirstOrDefault(o => o.Rank == rank && o.Suit == suit);
 
-		if (foundCard != null)
+		if (foundCard == null)
 		{
-			Cards.Remove(foundCard);
-			Destroy(foundCard.gameObject);
+			Debug.LogError($"{rank} of {suit} not found!");
+			throw new NullReferenceException($"{rank} of {suit} not found!");
 		}
+
+		Cards.Remove(foundCard);
 
 		return foundCard;
 	}

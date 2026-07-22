@@ -33,6 +33,7 @@ public class TutorialManager : GameManager
 		StartCoroutine(SetPlayerHands());
 	}
 
+	#region Helper Methods
 	private IEnumerator SetPlayerHands()
 	{
 		foreach ((CardRank rank, CardSuit suit) in GetPlayerCards())
@@ -63,44 +64,51 @@ public class TutorialManager : GameManager
 			Hands.First(o => o.Id == (int)PlayerPosition.East).AddCard(card);
 		}
 
+		foreach (var hand in Hands)
+		{
+			hand.OrderHand();
+		}
+
 		yield return null;
 	}
 
 	#region Hands
 	private IEnumerable<(CardRank, CardSuit)> GetPlayerCards()
 	{
-		yield return new(CardRank.Three, CardSuit.Spades);
+		yield return new(CardRank.Six, CardSuit.Clubs);
 		yield return new(CardRank.Four, CardSuit.Clubs);
 		yield return new(CardRank.Six, CardSuit.Diamonds);
 		yield return new(CardRank.Jack, CardSuit.Spades);
-		yield return new(CardRank.Six, CardSuit.Clubs);
+		yield return new(CardRank.Three, CardSuit.Spades);
 	}
 
 	private IEnumerable<(CardRank, CardSuit)> GetWestCards()
 	{
-		yield return new(CardRank.Queen, CardSuit.Spades);
-		yield return new(CardRank.Six, CardSuit.Spades);
-		yield return new(CardRank.Jack, CardSuit.Hearts);
 		yield return new(CardRank.Eight, CardSuit.Clubs);
 		yield return new(CardRank.Queen, CardSuit.Hearts);
+		yield return new(CardRank.Jack, CardSuit.Hearts);
+		yield return new(CardRank.Queen, CardSuit.Spades);
+		yield return new(CardRank.Six, CardSuit.Spades);
 	}
 
 	private IEnumerable<(CardRank, CardSuit)> GetNorthCards()
 	{
-		yield return new(CardRank.Two, CardSuit.Diamonds);
-		yield return new(CardRank.Five, CardSuit.Clubs);
-		yield return new(CardRank.Three, CardSuit.Hearts);
-		yield return new(CardRank.Nine, CardSuit.Hearts);
 		yield return new(CardRank.Seven, CardSuit.Clubs);
+		yield return new(CardRank.Five, CardSuit.Clubs);
+		yield return new(CardRank.Two, CardSuit.Diamonds);
+		yield return new(CardRank.Nine, CardSuit.Hearts);
+		yield return new(CardRank.Three, CardSuit.Hearts);
 	}
 
 	private IEnumerable<(CardRank, CardSuit)> GetEastCards()
 	{
-		yield return new(CardRank.Eight, CardSuit.Diamonds);
 		yield return new(CardRank.Jack, CardSuit.Clubs);
-		yield return new(CardRank.Two, CardSuit.Hearts);
 		yield return new(CardRank.Two, CardSuit.Clubs);
+		yield return new(CardRank.Eight, CardSuit.Diamonds);
 		yield return new(CardRank.Ten, CardSuit.Hearts);
+		yield return new(CardRank.Two, CardSuit.Hearts);
 	}
+	#endregion
+
 	#endregion
 }

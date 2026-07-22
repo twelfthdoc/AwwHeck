@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+[RequireComponent(typeof(RectTransform))]
 public class Hand : MonoBehaviour
 {
 	public int Id;
@@ -22,9 +23,7 @@ public class Hand : MonoBehaviour
 		}
 
 		Cards.Add(card);
-
-		var newCard = Instantiate(card, transform);
-		newCard.name = card.name;
+		card.transform.SetParent(transform);
 
 		return true;
 	}
@@ -41,31 +40,24 @@ public class Hand : MonoBehaviour
 		}
 
 		Cards.Remove(c);
-		Destroy(c.gameObject);
 
 		return true;
 	}
 
-	public void EmptyHand()
-	{
-		foreach (var card in Cards)
-		{
-			Destroy(card.gameObject);
-		}
-
-		Cards.Clear();
-	}
+	public void EmptyHand() => Cards.Clear();
 
 	public void OrderHand()
 	{
 		Cards = Cards.OrderBy(c => c.Suit).ThenByDescending(c => c.Rank).ToList();
-	}
-}
 
-public enum PlayerPosition
-{
-	South = 0,
-	West,
-	North,
-	East
+		var rect = GetComponent<RectTransform>().rect;
+		var width = rect.width / Cards.Count;
+		var pos = -(rect.width * 0.5f) + (width * 0.5f);
+
+		for (int i = 0; i < Cards.Count; i++)
+		{
+			Cards[i].transform.SetSiblingIndex(i);
+			Cards[i].transform.SetLocalPositionAndRotation(new Vector3(pos + (i * width), 0.0f, 0.0f), Quaternion.identity);
+		}
+	}
 }
