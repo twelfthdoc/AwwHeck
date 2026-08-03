@@ -1,11 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 
-public class ScoringManager : ManagerBase
+public class Scoring : SingletonBase
 {
 	private int _currentRound = 0;
 
-	public IDictionary<Tuple<int, int>, int> Scores = new Dictionary<Tuple<int, int>, int>();
+	public IDictionary<(PlayerPosition player, int roundNumber), int> Scores =
+		new Dictionary<(PlayerPosition, int), int>
+		{
+			{ new(PlayerPosition.South, 0), 10 },
+			{ new(PlayerPosition.West, 0),  10 },
+			{ new(PlayerPosition.North, 0), 10 },
+			{ new(PlayerPosition.East, 0),  10 },
+		};
+
 	public int[] Bids;
 
 	public void NewRound()
@@ -15,9 +23,9 @@ public class ScoringManager : ManagerBase
 		ServiceLocator.GetManager<RoundManager>();
 	}
 
-	public void NewBid(int playerId, int bid)
+	public void NewBid(PlayerPosition playerId, int bid)
 	{
-		Bids[playerId] = bid;
+		Bids[(int)playerId] = bid;
 	}
 
 	public bool ScoreRound()

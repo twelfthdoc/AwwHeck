@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(RectTransform))]
 public class Hand : MonoBehaviour
@@ -8,7 +9,7 @@ public class Hand : MonoBehaviour
 	public int Id;
 	public bool IsPlayer => Id == (int)PlayerPosition.South;
 
-	public IList<Card> Cards;
+	public List<Card> Cards;
 
 	public void Awake()
 	{
@@ -24,6 +25,7 @@ public class Hand : MonoBehaviour
 
 		Cards.Add(card);
 		card.transform.SetParent(transform);
+		card.transform.localScale = Vector3.one;
 
 		return true;
 	}
@@ -50,6 +52,15 @@ public class Hand : MonoBehaviour
 	{
 		Cards = Cards.OrderBy(c => c.Suit).ThenByDescending(c => c.Rank).ToList();
 
+		var trumpSuit = CardExtensions.TrumpSuit;
+
+		if (Cards.Any(c => c.Suit == trumpSuit))
+		{
+			var trumps = Cards.Where(c => c.Suit == trumpSuit).ToList();
+			Cards = Cards.Where(c => !trumps.Contains(c)).ToList();
+			Cards.InsertRange(0, trumps);
+		}
+
 		var rect = GetComponent<RectTransform>().rect;
 		var width = rect.width / Cards.Count;
 		var pos = -(rect.width * 0.5f) + (width * 0.5f);
@@ -59,5 +70,20 @@ public class Hand : MonoBehaviour
 			Cards[i].transform.SetSiblingIndex(i);
 			Cards[i].transform.SetLocalPositionAndRotation(new Vector3(pos + (i * width), 0.0f, 0.0f), Quaternion.identity);
 		}
+	}
+
+	public void PlayCard(Card card)
+	{
+		if (!HasCard(card))
+		{
+			Debug.LogWarning("Card not found in hand!");
+			return;
+		}
+
+		card.gameObject.GetComponent<Image>().sprite = ServiceLocator.GetManager<GameManager>().Deck.UpdateCardSprite(card.Rank, card.Suit);
+
+		// Animation - lerp?
+
+		card.transform.SetParent(transform.Find("PlayedCard"));
 	}
 }

@@ -2,7 +2,7 @@
 {
 	public static CardSuit TrumpSuit { get; private set; }
 
-	public static void UpdateTrumpSuit(CardSuit newTrumpSuit) => TrumpSuit = newTrumpSuit;
+	public static void UpdateTrumpSuit(this CardSuit newTrumpSuit) => TrumpSuit = newTrumpSuit;
 
 	// Returns the higher ranked card between two cards
 	public static Card GetHigherCard(this Card left, Card right)
