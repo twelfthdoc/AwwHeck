@@ -6,4 +6,14 @@ public class Card : MonoBehaviour
 	public CardSuit Suit { get; set; }
 
 	public override string ToString() => $"{Rank} of {Suit}";
+
+	public void OnMouseEnter()
+	{
+		
+	}
+
+	public void OnMouseExit()
+	{
+		
+	}
 }

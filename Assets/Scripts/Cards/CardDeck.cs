@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,17 +9,29 @@ public class CardDeck : MonoBehaviour
 	private readonly IList<Card> newDeck = new List<Card>();
 	private static readonly System.Random seed = new();
 
-	public IList<Card> Cards { get; set; } = new List<Card>();
+	public IList<Card> Cards { get; set; }
 	public GameObject cardPrefab;
-	public Sprite cardBackground;
 
 	public void Awake()
 	{
-		NewDeck();
+		if (newDeck.Count == 0)
+		{
+			NewDeck();
+		}
+
+		Cards = newDeck;
 		ShuffleDeck();
 	}
 
-	public void ShuffleDeck() => Cards = Cards.OrderBy(_ => seed.Next()).ToList();
+	public void ShuffleDeck()
+	{
+		Cards = Cards.OrderBy(_ => seed.Next()).ToList();
+
+		foreach (var card in Cards)
+		{
+			card.transform.SetAsFirstSibling();
+		}
+	}
 
 	private void NewDeck()
 	{
@@ -34,28 +45,45 @@ public class CardDeck : MonoBehaviour
 				CreateCard(rank, suit);
 			}
 		}
-
-		Cards = newDeck;
 	}
 
 	private void CreateCard(CardRank rank, CardSuit suit)
 	{
 		var cardObject = Instantiate(cardPrefab, transform);
+
 		var card = cardObject.AddComponent<Card>();
 		card.Rank = rank;
 		card.Suit = suit;
-		cardObject.name = card.ToString();
 
-		cardObject.GetComponent<SpriteRenderer>().sprite =
-			rank == CardRank.Ten && ServiceLocator.GetSingleton<Settings>().displayTenAsLetter ?
-			   ServiceLocator.GetSingleton<Resources>().Sprites.FirstOrDefault(s => s.name == $"{suit} Ten (Alt)") :
-			   ServiceLocator.GetSingleton<Resources>().Sprites.FirstOrDefault(s => s.name == $"{suit} {rank}");
+		cardObject.name = card.ToString();
+		cardObject.GetComponent<Image>().sprite = UpdateCardSprite(rank, suit);
 
 		newDeck.Add(card);
 	}
 
-	public void Deal(int handSize)
+	public Sprite UpdateCardSprite(CardRank rank, CardSuit suit) =>
+		rank == CardRank.Ten && ServiceLocator.GetSingleton<Settings>().displayTenAsLetter ?
+			ServiceLocator.GetSingleton<Resources>().Sprites.FirstOrDefault(s => s.name == $"{suit} Ten (Alt)") :
+			ServiceLocator.GetSingleton<Resources>().Sprites.FirstOrDefault(s => s.name == $"{suit} {rank}");
+
+	public void UpdateDealer(PlayerPosition dealer)
 	{
+		var backgrounds = ServiceLocator.GetSingleton<Resources>().Dealers;
+
+		gameObject.GetComponents<Image>().First(o => o.name == "Deck").sprite = dealer switch
+		{
+			PlayerPosition.South => backgrounds.FirstOrDefault(d => d.name == $"Dealer South"),
+			PlayerPosition.East => backgrounds.FirstOrDefault(d => d.name == $"Dealer East"),
+			PlayerPosition.North => backgrounds.FirstOrDefault(d => d.name == $"Dealer North"),
+			PlayerPosition.West => backgrounds.FirstOrDefault(d => d.name == $"Dealer West"),
+			_ => backgrounds.FirstOrDefault(d => d.name == $"Dealer None"),
+		};
+	}
+
+	public void Deal()
+	{
+		var handSize = ServiceLocator.GetManager<GameManager>().handSize;
+
 		foreach (var hand in ServiceLocator.GetManager<GameManager>().GetHands())
 		{
 			hand.Cards.AddRange(Cards.Take(handSize));
@@ -86,17 +114,10 @@ public class CardDeck : MonoBehaviour
 
 	public void UpdateTrumpSuit()
 	{
-		CardExtensions.UpdateTrumpSuit(Peek().Suit);
+		var card = Peek();
+		card.transform.SetAsLastSibling();
+		card.Suit.UpdateTrumpSuit();
 
-		gameObject.GetComponent<Image>().sprite = cardBackground;
-		var card = GetSpecificCard(Peek());
-
-		var instance = Instantiate(card, transform.parent);
-		instance.name = card.name;
-		instance.gameObject.GetComponent<SpriteRenderer>().enabled = true;
-		instance.gameObject.GetComponent<SpriteRenderer>().sortingOrder++;
-		instance.gameObject.GetComponentsInChildren<SpriteRenderer>().First(o => o.name == "Background").sortingOrder++;
-
-		gameObject.GetComponentInChildren<Button>().interactable = false;
+		gameObject.GetComponent<Button>().interactable = false;
 	}
 }

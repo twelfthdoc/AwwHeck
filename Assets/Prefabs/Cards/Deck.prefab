@@ -136,7 +136,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 2391210430682146960}
         m_TargetAssemblyTypeName: CardDeck, Assembly-CSharp
-        m_MethodName: UpdateTrumpSuit
+        m_MethodName: Deal
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

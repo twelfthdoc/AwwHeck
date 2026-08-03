@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -9,7 +8,10 @@ public class GameManager : ManagerBase
 
 	public int handSize;
 	public Sprite cardBack;
+	public CardDeck deckPrefab;
 
+	public PlayerPosition Dealer { get; protected set; }
+	public CardDeck Deck { get; protected set; }
 	public ICollection<Hand> Hands { get; protected set; }
 	public string GameMode { get; protected set; }
 	public int RoundNumber { get; protected set; } = 1;
@@ -35,11 +37,18 @@ public class GameManager : ManagerBase
 				_maxHandSize = 10;
 				break;
 		}
+
+		Deck = Instantiate(deckPrefab, new Vector3(360, 173), Quaternion.identity, FindFirstObjectByType<Canvas>().transform);
+		Deck.transform.localScale = new Vector3(0.75f, 0.75f);
+		Deck.name = deckPrefab.name;
 	}
 
 	public ICollection<Hand> GetHands() => Hands;
 	public Hand GetPlayerHand() => Hands.First(h => h.IsPlayer);
 
-	public void DealCards(int handSize) => ServiceLocator.GetManager<RoundManager>().DealCards(handSize);
-
+	public void UpdateDealer(int dealerId)
+	{
+		Dealer = (PlayerPosition)dealerId;
+		Deck.UpdateDealer(Dealer);
+	}
 }

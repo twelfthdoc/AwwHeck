@@ -1,61 +1,37 @@
-﻿using System;
-using System.Linq;
+﻿using Random = UnityEngine.Random;
 
 public class RoundManager : ManagerBase	// Possibly make into a singleton?
 {
 	public int dealerId;
 	public int tricksPlayed = 0;
 	public int roundNumber;
-	public CardSuit trumpSuit;
-	public CardDeck deck;
 
 	public void Awake()
 	{
-		deck = new();
-
 		roundNumber = ServiceLocator.GetManager<GameManager>().RoundNumber;
+
 		if (roundNumber == 1)
 		{
-			dealerId = DetermineDealer();
+			dealerId = Random.Range(0, 3);
 		}
 		else
 		{
 			dealerId = (dealerId + 1) % 4;
 		}
+
+		ServiceLocator.GetManager<GameManager>().UpdateDealer(dealerId);
 	}
 
-	public int DetermineDealer()
-	{
-		DealCards(1);
+	//public void DealCards(int handSize) => ServiceLocator.GetManager<GameManager>().Deck.Deal(handSize);
 
-		var hands = ServiceLocator.GetManager<GameManager>().Hands;
+	//public void UpdateTrumpSuit()
+	//{
+		
+	//}
 
-		foreach (int position in Enum.GetValues(typeof(PlayerPosition)))
-		{
-			PlayCard(position, hands.First(o => o.Id == position).Cards.First());
-		}
-
-		// Compare cards, return id of player with highest card
-
-		return 0;
-	}
-
-	public void DealCards(int handSize) => deck.Deal(handSize);
-
-	public void UpdateTrumpSuit()
-	{
-		trumpSuit = deck.Peek().Suit;
-	}
-
-	public Card PlayCard(int playerId, Card playerCard)
-	{
-		var hand = ServiceLocator.GetManager<GameManager>().Hands.First(o => o.Id == playerId);
-		return hand.RemoveCard(playerCard) ? playerCard : null;
-	}
-
-
-
-
-
-
+	//public Card PlayCard(int playerId, Card playerCard)
+	//{
+	//	var hand = ServiceLocator.GetManager<GameManager>().Hands.First(o => o.Id == playerId);
+	//	return hand.RemoveCard(playerCard) ? playerCard : null;
+	//}
 }
