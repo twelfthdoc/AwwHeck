@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : ManagerBase
 {
@@ -16,8 +17,13 @@ public class GameManager : ManagerBase
 	public string GameMode { get; protected set; }
 	public int RoundNumber { get; protected set; } = 1;
 
+	private Scoring _scoring;
+
 	public virtual void Awake()
 	{
+		// Create New Scoring Singleton
+		_scoring ??= ServiceLocator.GetSingleton<Scoring>();
+
 		// Create Hands
 		Hands = FindFirstObjectByType<Canvas>().GetComponentsInChildren<Hand>();
 
@@ -33,8 +39,8 @@ public class GameManager : ManagerBase
 				_maxHandSize = 5;
 				break;
 			default:
-				handSize = 5;
-				_maxHandSize = 10;
+				handSize = 1;
+				_maxHandSize = 5;
 				break;
 		}
 
@@ -50,5 +56,19 @@ public class GameManager : ManagerBase
 	{
 		Dealer = (PlayerPosition)dealerId;
 		Deck.UpdateDealer(Dealer);
+	}
+
+	// Should only be called at end of game, or when user quits game from submenu
+	public void AtEndOfGame()
+	{
+		// Tidyup / await any user input
+
+
+		// Destroy dependencies
+		ServiceLocator.DestroyManager<RoundManager>();
+		ServiceLocator.DestroySingleton<Scoring>();
+
+		// Return to Main Menu
+		SceneManager.LoadScene("MainMenu");
 	}
 }

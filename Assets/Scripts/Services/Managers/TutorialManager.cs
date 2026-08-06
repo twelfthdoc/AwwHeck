@@ -30,29 +30,29 @@ public class TutorialManager : GameManager
 	#region Helper Methods
 	private void SetPlayerHands()
 	{
-		foreach ((CardRank rank, CardSuit suit) in GetPlayerCards())
+		foreach (var c in GetPlayerCards())
 		{
-			var card = Deck.GetSpecificCard(rank, suit);
+			var card = Deck.GetSpecificCard(c);
 			Hands.First(o => o.Id == (int)PlayerPosition.South).AddCard(card);
 		}
 
-		foreach ((CardRank rank, CardSuit suit) in GetWestCards())
+		foreach (var c in GetWestCards())
 		{
-			var card = Deck.GetSpecificCard(rank, suit);
+			var card = Deck.GetSpecificCard(c);
 			card.gameObject.GetComponent<Image>().sprite = cardBack;
 			Hands.First(o => o.Id == (int)PlayerPosition.West).AddCard(card);
 		}
 
-		foreach ((CardRank rank, CardSuit suit) in GetNorthCards())
+		foreach (var c in GetNorthCards())
 		{
-			var card = Deck.GetSpecificCard(rank, suit);
+			var card = Deck.GetSpecificCard(c);
 			card.gameObject.GetComponent<Image>().sprite = cardBack;
 			Hands.First(o => o.Id == (int)PlayerPosition.North).AddCard(card);
 		}
 
-		foreach ((CardRank rank, CardSuit suit) in GetEastCards())
+		foreach (var c in GetEastCards())
 		{
-			var card = Deck.GetSpecificCard(rank, suit);
+			var card = Deck.GetSpecificCard(c);
 			card.gameObject.GetComponent<Image>().sprite = cardBack;
 			Hands.First(o => o.Id == (int)PlayerPosition.East).AddCard(card);
 		}
@@ -64,7 +64,7 @@ public class TutorialManager : GameManager
 	}
 
 	#region Hands
-	private IEnumerable<(CardRank, CardSuit)> GetPlayerCards()
+	private IEnumerable<Card> GetPlayerCards()
 	{
 		yield return new(CardRank.Three, CardSuit.Spades);
 		yield return new(CardRank.Four, CardSuit.Clubs);
@@ -73,7 +73,7 @@ public class TutorialManager : GameManager
 		yield return new(CardRank.Six, CardSuit.Clubs);
 	}
 
-	private IEnumerable<(CardRank, CardSuit)> GetWestCards()
+	private IEnumerable<Card> GetWestCards()
 	{
 		yield return new(CardRank.Queen, CardSuit.Spades);
 		yield return new(CardRank.Six, CardSuit.Spades);
@@ -82,7 +82,7 @@ public class TutorialManager : GameManager
 		yield return new(CardRank.Queen, CardSuit.Hearts);
 	}
 
-	private IEnumerable<(CardRank, CardSuit)> GetNorthCards()
+	private IEnumerable<Card> GetNorthCards()
 	{
 		yield return new(CardRank.Two, CardSuit.Diamonds);
 		yield return new(CardRank.Five, CardSuit.Clubs);
@@ -91,7 +91,7 @@ public class TutorialManager : GameManager
 		yield return new(CardRank.Seven, CardSuit.Clubs);
 	}
 
-	private IEnumerable<(CardRank, CardSuit)> GetEastCards()
+	private IEnumerable<Card> GetEastCards()
 	{
 		yield return new(CardRank.Eight, CardSuit.Diamonds);
 		yield return new(CardRank.Jack, CardSuit.Clubs);

@@ -19,18 +19,8 @@ public class CardDeck : MonoBehaviour
 			NewDeck();
 		}
 
-		Cards = newDeck;
+		RefreshDeck();
 		ShuffleDeck();
-	}
-
-	public void ShuffleDeck()
-	{
-		Cards = Cards.OrderBy(_ => seed.Next()).ToList();
-
-		foreach (var card in Cards)
-		{
-			card.transform.SetAsFirstSibling();
-		}
 	}
 
 	private void NewDeck()
@@ -44,6 +34,18 @@ public class CardDeck : MonoBehaviour
 			{
 				CreateCard(rank, suit);
 			}
+		}
+	}
+
+	public void RefreshDeck() => Cards = newDeck;
+
+	public void ShuffleDeck()
+	{
+		Cards = Cards.OrderBy(_ => seed.Next()).ToList();
+
+		foreach (var card in Cards)
+		{
+			card.transform.SetAsFirstSibling();
 		}
 	}
 

@@ -4,6 +4,12 @@
 
 	public static void UpdateTrumpSuit(this CardSuit newTrumpSuit) => TrumpSuit = newTrumpSuit;
 
+	public static Card GetHighestCard(this Card[] cards) => cards[0].GetHighestCard(cards[1], cards[2], cards[3]);
+
+	// Returns highest card in the trick
+	public static Card GetHighestCard(this Card first, Card second, Card third, Card fourth) =>
+		first.GetHigherCard(second).GetHigherCard(third).GetHigherCard(fourth);
+
 	// Returns the higher ranked card between two cards
 	public static Card GetHigherCard(this Card left, Card right)
 	{

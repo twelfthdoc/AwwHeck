@@ -36,13 +36,9 @@ public class Hand : MonoBehaviour
 	{
 		var c = Cards.FirstOrDefault(c => c.Rank == card.Rank && c.Suit == card.Suit);
 
-		if (c == null)
-		{
-			return false;
-		}
+		if (c == null) return false;
 
 		Cards.Remove(c);
-
 		return true;
 	}
 
@@ -85,5 +81,11 @@ public class Hand : MonoBehaviour
 		// Animation - lerp?
 
 		card.transform.SetParent(transform.Find("PlayedCard"));
+		OrderHand();
+
+		if (IsPlayer && ServiceLocator.GetManager<RoundManager>().forehand != (int)PlayerPosition.West)
+		{
+			ServiceLocator.GetManager<RoundManager>().GoToNextPlayer();
+		}
 	}
 }
