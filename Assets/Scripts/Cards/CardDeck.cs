@@ -53,7 +53,7 @@ public class CardDeck : MonoBehaviour
 	{
 		var cardObject = Instantiate(cardPrefab, transform);
 
-		var card = cardObject.AddComponent<Card>();
+		var card = cardObject.GetComponent<Card>();
 		card.Rank = rank;
 		card.Suit = suit;
 
@@ -88,7 +88,7 @@ public class CardDeck : MonoBehaviour
 
 		foreach (var hand in ServiceLocator.GetManager<GameManager>().GetHands())
 		{
-			hand.Cards.AddRange(Cards.Take(handSize));
+			hand.Cards.ToList().AddRange(Cards.Take(handSize));
 			Cards = Cards.Skip(handSize).ToList();
 		}
 
@@ -119,7 +119,5 @@ public class CardDeck : MonoBehaviour
 		var card = Peek();
 		card.transform.SetAsLastSibling();
 		card.Suit.UpdateTrumpSuit();
-
-		gameObject.GetComponent<Button>().interactable = false;
 	}
 }

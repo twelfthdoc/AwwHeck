@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -10,6 +11,7 @@ public class GameManager : ManagerBase
 	public int handSize;
 	public Sprite cardBack;
 	public CardDeck deckPrefab;
+	public GameObject roundManagerPrefab;
 
 	public PlayerPosition Dealer { get; protected set; }
 	public CardDeck Deck { get; protected set; }
@@ -34,7 +36,6 @@ public class GameManager : ManagerBase
 		switch (GameMode)
 		{
 			case "Tutorial":
-				// This should never happen! Tutorial Manager explicitly overrides these settings
 				handSize = 5;
 				_maxHandSize = 5;
 				break;
@@ -47,6 +48,8 @@ public class GameManager : ManagerBase
 		Deck = Instantiate(deckPrefab, new Vector3(360, 173), Quaternion.identity, FindFirstObjectByType<Canvas>().transform);
 		Deck.transform.localScale = new Vector3(0.75f, 0.75f);
 		Deck.name = deckPrefab.name;
+
+		ServiceLocator.GetSingleton<Scoring>().NewRound();
 	}
 
 	public ICollection<Hand> GetHands() => Hands;
@@ -58,6 +61,32 @@ public class GameManager : ManagerBase
 		Deck.UpdateDealer(Dealer);
 	}
 
+	public void UpdateLabel(int playerId)
+	{
+		var scoring = ServiceLocator.GetSingleton<Scoring>();
+		var tricksWon = scoring.Tricks[playerId];
+		var bid = scoring.Bids[playerId];
+
+		var textObject = Hands.First(h => h.Id == playerId).GetComponentInChildren<TextMeshProUGUI>();
+		textObject.text = $"{(PlayerPosition)playerId} - {tricksWon}/{bid}";
+
+		if (tricksWon > bid)
+		{
+			textObject.color = Color.red;
+		}
+
+		if (tricksWon == bid)
+		{
+			textObject.color = Color.green;
+		}
+
+		if (tricksWon == bid - 1)
+		{
+			textObject.color = Color.yellow;
+		}
+	}
+
+
 	// Should only be called at end of game, or when user quits game from submenu
 	public void AtEndOfGame()
 	{
@@ -65,7 +94,6 @@ public class GameManager : ManagerBase
 
 
 		// Destroy dependencies
-		ServiceLocator.DestroyManager<RoundManager>();
 		ServiceLocator.DestroySingleton<Scoring>();
 
 		// Return to Main Menu

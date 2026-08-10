@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Object = UnityEngine.Object;
 
 public class Scoring : SingletonBase
 {
@@ -23,17 +24,21 @@ public class Scoring : SingletonBase
 		Tricks = new int[4];
 		_currentRound++;
 
+		var roundManager = Object.Instantiate(ServiceLocator.GetManager<GameManager>().roundManagerPrefab);
+		roundManager.name = "RoundManager";
 		ServiceLocator.GetManager<RoundManager>();
 	}
 
 	public void NewBid(PlayerPosition playerId, int bid)
 	{
 		Bids[(int)playerId] = bid;
+		ServiceLocator.GetManager<GameManager>().UpdateLabel((int)playerId);
 	}
 
 	public void TrickWon(int playerId)
 	{
 		Tricks[playerId]++;
+		ServiceLocator.GetManager<GameManager>().UpdateLabel(playerId);
 	}
 
 	public bool ScoreRound()

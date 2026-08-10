@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class RoundManager : ManagerBase	// Possibly make into a singleton?
+public class RoundManager : ManagerBase
 {
 	public int dealerId;
 	public int forehand;
@@ -14,6 +14,7 @@ public class RoundManager : ManagerBase	// Possibly make into a singleton?
 	private CardSuit? _suitLed;
 
 	public IList<Hand> Hands { get; set; }
+	public bool IsPlayerTurn => nextPlayer == (int)PlayerPosition.South;
 
 	public void Awake()
 	{
@@ -54,9 +55,13 @@ public class RoundManager : ManagerBase	// Possibly make into a singleton?
 			ServiceLocator.GetSingleton<Scoring>().ScoreRound();
 		}
 
-		if (nextPlayer != 0)
+		if (!IsPlayerTurn)
 		{
 			GetNpcToPlayCard(nextPlayer);
+		}
+		else
+		{
+			Hands.First(h => h.IsPlayer).ToggleCardButtons(IsPlayerTurn);
 		}
 	}
 
@@ -64,7 +69,7 @@ public class RoundManager : ManagerBase	// Possibly make into a singleton?
 
 	public void GoToNextPlayer() => NextPlayer(nextPlayer);
 
-	public CardSuit? SuitToFollow() => _suitLed;
+	public CardSuit SuitToFollow() => _suitLed.Value;
 
 	public void EvaluateTrick()
 	{

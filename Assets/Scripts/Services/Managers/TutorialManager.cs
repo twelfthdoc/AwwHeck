@@ -10,9 +10,8 @@ public class TutorialManager : GameManager
 	{
 		base.Awake();
 
-		GameMode = "Tutorial";
-		handSize = 5;
-		_maxHandSize = 5;
+		Dealer = PlayerPosition.South;
+		Deck.UpdateDealer(Dealer);
 	}
 
 	public void Start()
@@ -21,40 +20,37 @@ public class TutorialManager : GameManager
 		Deck.Cards.Insert(0, trumpCard);
 		Deck.UpdateTrumpSuit();
 
-		Dealer = PlayerPosition.South;
-		Deck.UpdateDealer(Dealer);
-
 		SetPlayerHands();
 	}
 
 	#region Helper Methods
 	private void SetPlayerHands()
 	{
-		foreach (var c in GetPlayerCards())
+		foreach (var (rank, suit) in GetPlayerCards())
 		{
-			var card = Deck.GetSpecificCard(c);
-			Hands.First(o => o.Id == (int)PlayerPosition.South).AddCard(card);
+			var card = Deck.GetSpecificCard(rank, suit);
+			Hands.First(h => h.IsPlayer).AddCard(card);
 		}
 
-		foreach (var c in GetWestCards())
+		foreach (var (rank, suit) in GetWestCards())
 		{
-			var card = Deck.GetSpecificCard(c);
+			var card = Deck.GetSpecificCard(rank, suit);
 			card.gameObject.GetComponent<Image>().sprite = cardBack;
-			Hands.First(o => o.Id == (int)PlayerPosition.West).AddCard(card);
+			Hands.First(h => h.Id == (int)PlayerPosition.West).AddCard(card);
 		}
 
-		foreach (var c in GetNorthCards())
+		foreach (var (rank, suit) in GetNorthCards())
 		{
-			var card = Deck.GetSpecificCard(c);
+			var card = Deck.GetSpecificCard(rank, suit);
 			card.gameObject.GetComponent<Image>().sprite = cardBack;
-			Hands.First(o => o.Id == (int)PlayerPosition.North).AddCard(card);
+			Hands.First(h => h.Id == (int)PlayerPosition.North).AddCard(card);
 		}
 
-		foreach (var c in GetEastCards())
+		foreach (var (rank, suit) in GetEastCards())
 		{
-			var card = Deck.GetSpecificCard(c);
+			var card = Deck.GetSpecificCard(rank, suit);
 			card.gameObject.GetComponent<Image>().sprite = cardBack;
-			Hands.First(o => o.Id == (int)PlayerPosition.East).AddCard(card);
+			Hands.First(h => h.Id == (int)PlayerPosition.East).AddCard(card);
 		}
 
 		foreach (var hand in Hands)
@@ -64,40 +60,40 @@ public class TutorialManager : GameManager
 	}
 
 	#region Hands
-	private IEnumerable<Card> GetPlayerCards()
+	private IEnumerable<(CardRank rank, CardSuit suit)> GetPlayerCards()
 	{
-		yield return new(CardRank.Three, CardSuit.Spades);
-		yield return new(CardRank.Four, CardSuit.Clubs);
-		yield return new(CardRank.Six, CardSuit.Diamonds);
-		yield return new(CardRank.Jack, CardSuit.Spades);
-		yield return new(CardRank.Six, CardSuit.Clubs);
+		yield return (CardRank.Three, CardSuit.Spades);
+		yield return (CardRank.Four, CardSuit.Clubs);
+		yield return (CardRank.Six, CardSuit.Diamonds);
+		yield return (CardRank.Jack, CardSuit.Spades);
+		yield return (CardRank.Six, CardSuit.Clubs);
 	}
 
-	private IEnumerable<Card> GetWestCards()
+	private IEnumerable<(CardRank rank, CardSuit suit)> GetWestCards()
 	{
-		yield return new(CardRank.Queen, CardSuit.Spades);
-		yield return new(CardRank.Six, CardSuit.Spades);
-		yield return new(CardRank.Jack, CardSuit.Hearts);
-		yield return new(CardRank.Eight, CardSuit.Clubs);
-		yield return new(CardRank.Queen, CardSuit.Hearts);
+		yield return (CardRank.Queen, CardSuit.Spades);
+		yield return (CardRank.Six, CardSuit.Spades);
+		yield return (CardRank.Jack, CardSuit.Hearts);
+		yield return (CardRank.Eight, CardSuit.Clubs);
+		yield return (CardRank.Queen, CardSuit.Hearts);
 	}
 
-	private IEnumerable<Card> GetNorthCards()
+	private IEnumerable<(CardRank rank, CardSuit suit)> GetNorthCards()
 	{
-		yield return new(CardRank.Two, CardSuit.Diamonds);
-		yield return new(CardRank.Five, CardSuit.Clubs);
-		yield return new(CardRank.Three, CardSuit.Hearts);
-		yield return new(CardRank.Nine, CardSuit.Hearts);
-		yield return new(CardRank.Seven, CardSuit.Clubs);
+		yield return (CardRank.Two, CardSuit.Diamonds);
+		yield return (CardRank.Five, CardSuit.Clubs);
+		yield return (CardRank.Three, CardSuit.Hearts);
+		yield return (CardRank.Nine, CardSuit.Hearts);
+		yield return (CardRank.Seven, CardSuit.Clubs);
 	}
 
-	private IEnumerable<Card> GetEastCards()
+	private IEnumerable<(CardRank rank, CardSuit suit)> GetEastCards()
 	{
-		yield return new(CardRank.Eight, CardSuit.Diamonds);
-		yield return new(CardRank.Jack, CardSuit.Clubs);
-		yield return new(CardRank.Two, CardSuit.Hearts);
-		yield return new(CardRank.Two, CardSuit.Clubs);
-		yield return new(CardRank.Ten, CardSuit.Hearts);
+		yield return (CardRank.Eight, CardSuit.Diamonds);
+		yield return (CardRank.Three, CardSuit.Diamonds);
+		yield return (CardRank.Jack, CardSuit.Clubs);
+		yield return (CardRank.Two, CardSuit.Clubs);
+		yield return (CardRank.Ten, CardSuit.Hearts);
 	}
 	#endregion
 

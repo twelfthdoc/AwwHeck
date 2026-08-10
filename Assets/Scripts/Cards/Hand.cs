@@ -32,6 +32,8 @@ public class Hand : MonoBehaviour
 
 	public bool HasCard(Card card) => Cards.Any(c => c.Rank == card.Rank && c.Suit == card.Suit);
 
+	public Card FindCard(CardRank rank, CardSuit suit) => Cards.FirstOrDefault(c => c.Rank == rank && c.Suit == suit);
+
 	public bool RemoveCard(Card card)
 	{
 		var c = Cards.FirstOrDefault(c => c.Rank == card.Rank && c.Suit == card.Suit);
@@ -83,9 +85,25 @@ public class Hand : MonoBehaviour
 		card.transform.SetParent(transform.Find("PlayedCard"));
 		OrderHand();
 
-		if (IsPlayer && ServiceLocator.GetManager<RoundManager>().forehand != (int)PlayerPosition.West)
+		if (IsPlayer)
 		{
-			ServiceLocator.GetManager<RoundManager>().GoToNextPlayer();
+			ToggleCardButtons(false);
+
+			if (ServiceLocator.GetManager<RoundManager>().forehand != (int)PlayerPosition.West)
+			{
+				ServiceLocator.GetManager<RoundManager>().GoToNextPlayer();
+			}
+		}
+	}
+
+	public void ToggleCardButtons(bool isPlayerTurn)
+	{
+		if (IsPlayer)
+		{
+			foreach (var card in Cards)
+			{
+				card.GetComponent<Button>().enabled = isPlayerTurn;
+			}
 		}
 	}
 }
