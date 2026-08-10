@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Object = UnityEngine.Object;
 
 public class Scoring : SingletonBase
 {
@@ -15,39 +16,70 @@ public class Scoring : SingletonBase
 		};
 
 	public int[] Bids;
+	public int[] Tricks;
 
 	public void NewRound()
 	{
 		Bids = new int[4];
+		Tricks = new int[4];
 		_currentRound++;
+
+		var roundManager = Object.Instantiate(ServiceLocator.GetManager<GameManager>().roundManagerPrefab);
+		roundManager.name = "RoundManager";
 		ServiceLocator.GetManager<RoundManager>();
 	}
 
 	public void NewBid(PlayerPosition playerId, int bid)
 	{
 		Bids[(int)playerId] = bid;
+		ServiceLocator.GetManager<GameManager>().UpdateLabel((int)playerId);
+	}
+
+	public void TrickWon(int playerId)
+	{
+		Tricks[playerId]++;
+		ServiceLocator.GetManager<GameManager>().UpdateLabel(playerId);
 	}
 
 	public bool ScoreRound()
 	{
-		// Get # Tricks Won for each player
+		foreach (PlayerPosition player in Enum.GetValues(typeof(PlayerPosition)))
+		{
+			var bid = Bids[(int)player];
+			var tricksWon = Tricks[(int)player];
 
-		// Compare Tricks Won vs Player's Bid
+			var points = 0;
 
-		// If equal, score points
+			if (bid == tricksWon)
+			{
+				// If equal, score points
+			}
+			else if (bid > tricksWon)
+			{
+				// If underbid, lose points
+			}
+			else
+			{
+				// If overbid, lose more points
+			}
 
-		// If not equal, lose points
+			var roundNumber = ServiceLocator.GetManager<GameManager>().RoundNumber;
 
-		// Compare round score vs running score
+			// Compare round score vs running score
+			var previousScore = Scores[(player, roundNumber - 1)];
 
-		// Add new scores to the Dictionary
+			var newScore = previousScore + points;
+
+			// Add new scores to the Dictionary
+			Scores.Add((player, roundNumber), newScore);
+		}
 
 		// Display score on screen
+
 
 		// Await destruction of RoundManager
 		ServiceLocator.DestroyManager<RoundManager>();
 
 		return true;
 	}
-
 }

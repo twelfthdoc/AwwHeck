@@ -19,18 +19,8 @@ public class CardDeck : MonoBehaviour
 			NewDeck();
 		}
 
-		Cards = newDeck;
+		RefreshDeck();
 		ShuffleDeck();
-	}
-
-	public void ShuffleDeck()
-	{
-		Cards = Cards.OrderBy(_ => seed.Next()).ToList();
-
-		foreach (var card in Cards)
-		{
-			card.transform.SetAsFirstSibling();
-		}
 	}
 
 	private void NewDeck()
@@ -47,11 +37,23 @@ public class CardDeck : MonoBehaviour
 		}
 	}
 
+	public void RefreshDeck() => Cards = newDeck;
+
+	public void ShuffleDeck()
+	{
+		Cards = Cards.OrderBy(_ => seed.Next()).ToList();
+
+		foreach (var card in Cards)
+		{
+			card.transform.SetAsFirstSibling();
+		}
+	}
+
 	private void CreateCard(CardRank rank, CardSuit suit)
 	{
 		var cardObject = Instantiate(cardPrefab, transform);
 
-		var card = cardObject.AddComponent<Card>();
+		var card = cardObject.GetComponent<Card>();
 		card.Rank = rank;
 		card.Suit = suit;
 
@@ -86,7 +88,7 @@ public class CardDeck : MonoBehaviour
 
 		foreach (var hand in ServiceLocator.GetManager<GameManager>().GetHands())
 		{
-			hand.Cards.AddRange(Cards.Take(handSize));
+			hand.Cards.ToList().AddRange(Cards.Take(handSize));
 			Cards = Cards.Skip(handSize).ToList();
 		}
 
@@ -117,7 +119,5 @@ public class CardDeck : MonoBehaviour
 		var card = Peek();
 		card.transform.SetAsLastSibling();
 		card.Suit.UpdateTrumpSuit();
-
-		gameObject.GetComponent<Button>().interactable = false;
 	}
 }
