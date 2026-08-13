@@ -4,8 +4,6 @@ using Object = UnityEngine.Object;
 
 public class Scoring : SingletonBase
 {
-	private int _currentRound = 0;
-
 	public IDictionary<(PlayerPosition player, int roundNumber), int> Scores =
 		new Dictionary<(PlayerPosition, int), int>
 		{
@@ -22,7 +20,6 @@ public class Scoring : SingletonBase
 	{
 		Bids = new int[4];
 		Tricks = new int[4];
-		_currentRound++;
 
 		var roundManager = Object.Instantiate(ServiceLocator.GetManager<GameManager>().roundManagerPrefab);
 		roundManager.name = "RoundManager";
@@ -47,20 +44,28 @@ public class Scoring : SingletonBase
 		{
 			var bid = Bids[(int)player];
 			var tricksWon = Tricks[(int)player];
+			var handSize = ServiceLocator.GetManager<GameManager>().handSize;
 
 			var points = 0;
 
 			if (bid == tricksWon)
 			{
 				// If equal, score points
-			}
-			else if (bid > tricksWon)
-			{
-				// If underbid, lose points
+				points += 10 + tricksWon;
+
+				// If handSize is 5 or more, bonus points for a nullo or slam
+				if (handSize >= 5)
+				{
+					if (tricksWon == 0) points += (handSize % 2) + 1;
+					if (tricksWon == handSize) points += 10;
+				}
 			}
 			else
 			{
-				// If overbid, lose more points
+				// If not equal, lose points
+				// The bigger the difference, the more points are lost (triangle number)
+				var difference = Math.Abs(bid - tricksWon);
+				points -= difference * (difference + 1) / 2;
 			}
 
 			var roundNumber = ServiceLocator.GetManager<GameManager>().RoundNumber;
