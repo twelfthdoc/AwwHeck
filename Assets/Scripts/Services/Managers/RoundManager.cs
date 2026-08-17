@@ -27,10 +27,18 @@ public class RoundManager : ManagerBase
 			dealerId = NextPlayer(dealerId);
 		}
 
+		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
+		{
+			dealerId = 0;
+		}
+
 		forehand = NextPlayer(dealerId);
+		nextPlayer = forehand;
 
 		ServiceLocator.GetManager<GameManager>().UpdateDealer(dealerId);
 		Hands = ServiceLocator.GetManager<GameManager>().Hands.ToList();
+
+		GetBid(forehand);
 	}
 
 	public void Update()
@@ -61,15 +69,38 @@ public class RoundManager : ManagerBase
 		}
 		else
 		{
-			Hands.First(h => h.IsPlayer).ToggleCardButtons(IsPlayerTurn);
+			Hands.First(h => h.IsPlayer).ToggleCardButtons(IsPlayerTurn, _suitLed);
 		}
 	}
 
 	public int NextPlayer(int playerId) => (playerId + 1) % 4;
 
+	public void GetBid(int playerId)
+	{
+		switch (playerId)
+		{
+			case 0:
+				// Player Bid
+				// GameManager.DisplayBiddingBox();
+				break;
+			case 1:
+				NpcBehaviour.BidWest();
+				break;
+			case 2:
+				NpcBehaviour.BidNorth();
+				break;
+			case 3:
+				NpcBehaviour.BidEast();
+				break;
+			default:
+				Debug.LogError("");
+				break;
+		}
+	}
+
 	public void GoToNextPlayer() => NextPlayer(nextPlayer);
 
-	public CardSuit SuitToFollow() => _suitLed.Value;
+	public CardSuit? SuitToFollow() => _suitLed;
 
 	public void EvaluateTrick()
 	{

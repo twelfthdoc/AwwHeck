@@ -67,7 +67,7 @@ public class GameManager : ManagerBase
 		var tricksWon = scoring.Tricks[playerId];
 		var bid = scoring.Bids[playerId];
 
-		var textObject = Hands.First(h => h.Id == playerId).GetComponentInChildren<TextMeshProUGUI>();
+		var textObject = Hands.First(h => h.Id == playerId).GetComponentsInChildren<TextMeshProUGUI>().First(o => o.name == "Label");
 		textObject.text = $"{(PlayerPosition)playerId} - {tricksWon}/{bid}";
 
 		if (tricksWon > bid)
@@ -80,7 +80,7 @@ public class GameManager : ManagerBase
 			textObject.color = Color.green;
 		}
 
-		if (tricksWon == bid - 1)
+		if (tricksWon < bid)
 		{
 			textObject.color = Color.yellow;
 		}
