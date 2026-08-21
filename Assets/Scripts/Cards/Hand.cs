@@ -80,9 +80,10 @@ public class Hand : MonoBehaviour
 
 		card.gameObject.GetComponent<Image>().sprite = ServiceLocator.GetManager<GameManager>().Deck.UpdateCardSprite(card.Rank, card.Suit);
 
-		// Animation - lerp?
-
 		card.transform.SetParent(transform.Find("PlayedCard"));
+		card.transform.localPosition = Vector3.zero;
+
+		RemoveCard(card);
 		OrderHand();
 
 		if (IsPlayer)
@@ -96,10 +97,25 @@ public class Hand : MonoBehaviour
 		}
 	}
 
-	public void ToggleCardButtons(bool isPlayerTurn)
+	public void ToggleCardButtons(bool isPlayerTurn, CardSuit? suitLed = null)
 	{
 		if (IsPlayer)
 		{
+			if (suitLed != null)
+			{
+				var cards = Cards.Where(c => c.Suit == suitLed);
+
+				if (cards.Count() != 0)
+				{
+					foreach (var card in cards)
+					{
+						card.GetComponent<Button>().enabled = isPlayerTurn;
+					}
+
+					return;
+				}
+			}
+
 			foreach (var card in Cards)
 			{
 				card.GetComponent<Button>().enabled = isPlayerTurn;

@@ -8,10 +8,11 @@ public class TutorialManager : GameManager
 
 	public override void Awake()
 	{
+		GameMode ??= "Tutorial";
 		base.Awake();
 
-		Dealer = PlayerPosition.South;
-		Deck.UpdateDealer(Dealer);
+		//Dealer = PlayerPosition.South;
+		//Deck.UpdateDealer(Dealer);
 	}
 
 	public void Start()

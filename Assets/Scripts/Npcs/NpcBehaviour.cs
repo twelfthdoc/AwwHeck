@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 public static class NpcBehaviour
 {
@@ -9,7 +11,6 @@ public static class NpcBehaviour
 		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
 			ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.West, 1);
-			return;
 		}
 
 		// West NPC behaviour here
@@ -23,7 +24,6 @@ public static class NpcBehaviour
 		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
 			ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.North, 1);
-			return;
 		}
 
 		// North NPC behaviour here
@@ -36,7 +36,6 @@ public static class NpcBehaviour
 		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
 			ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.East, 3);
-			return;
 		}
 
 		// East NPC behaviour here
@@ -147,35 +146,38 @@ public static class NpcBehaviour
 
 
 	#region Tutorial Methods
-	private static async void PlayCardWestTutorial(Hand west)
+	private static IEnumerator PlayCardWestTutorial(Hand west)
 	{
-		await foreach (var (rank, suit) in GetWestCards())
+		foreach (var (rank, suit) in GetWestCards())
 		{
 			var card = west.FindCard(rank, suit);
 			west.PlayCard(card);
+			yield break;
 		}
 	}
 
-	private static async void PlayCardNorthTutorial(Hand north)
+	private static IEnumerator PlayCardNorthTutorial(Hand north)
 	{
-		await foreach (var (rank, suit) in GetNorthCards())
+		foreach (var (rank, suit) in GetNorthCards())
 		{
 			var card = north.FindCard(rank, suit);
 			north.PlayCard(card);
+			yield break;
 		}
 	}
 
-	private static async void PlayCardEastTutorial(Hand east)
+	private static IEnumerator PlayCardEastTutorial(Hand east)
 	{
-		await foreach (var (rank, suit) in GetEastCards())
+		foreach (var (rank, suit) in GetEastCards())
 		{
 			var card = east.FindCard(rank, suit);
 			east.PlayCard(card);
+			yield break;
 		}
 	}
 
 	#region Hands
-	private static async IAsyncEnumerable<(CardRank rank, CardSuit suit)> GetWestCards()
+	private static IEnumerable<(CardRank rank, CardSuit suit)> GetWestCards()
 	{
 		yield return (CardRank.Queen, CardSuit.Spades);
 		yield return (CardRank.Six, CardSuit.Spades);
@@ -184,7 +186,7 @@ public static class NpcBehaviour
 		yield return (CardRank.Queen, CardSuit.Hearts);
 	}
 
-	private static async IAsyncEnumerable<(CardRank rank, CardSuit suit)> GetNorthCards()
+	private static IEnumerable<(CardRank rank, CardSuit suit)> GetNorthCards()
 	{
 		yield return (CardRank.Two, CardSuit.Diamonds);
 		yield return (CardRank.Five, CardSuit.Clubs);
@@ -193,7 +195,7 @@ public static class NpcBehaviour
 		yield return (CardRank.Seven, CardSuit.Clubs);
 	}
 
-	private static async IAsyncEnumerable<(CardRank rank, CardSuit suit)> GetEastCards()
+	private static IEnumerable<(CardRank rank, CardSuit suit)> GetEastCards()
 	{
 		yield return (CardRank.Eight, CardSuit.Diamonds);
 		yield return (CardRank.Jack, CardSuit.Clubs);
