@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
-using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using TMPro;
 
 public class GameManager : ManagerBase
 {
@@ -11,6 +13,7 @@ public class GameManager : ManagerBase
 	public int handSize;
 	public Sprite cardBack;
 	public CardDeck deckPrefab;
+	public GameObject biddingButtons;
 	public GameObject roundManagerPrefab;
 
 	public PlayerPosition Dealer { get; protected set; }
@@ -30,7 +33,7 @@ public class GameManager : ManagerBase
 		Hands = FindFirstObjectByType<Canvas>().GetComponentsInChildren<Hand>();
 
 		// GameMode is determined by the settings/pre-game game mode selection
-		GameMode = ServiceLocator.GetSingleton<Settings>().gameMode;
+		GameMode ??= ServiceLocator.GetSingleton<Settings>().gameMode;
 
 		// GameMode determines hand size and maximum hand size
 		switch (GameMode)
@@ -55,6 +58,55 @@ public class GameManager : ManagerBase
 	public ICollection<Hand> GetHands() => Hands;
 	public Hand GetPlayerHand() => Hands.First(h => h.IsPlayer);
 
+	public IEnumerator GetPlayerBid()
+	{
+		ShowBiddingButtons();
+
+		yield return ButtonPressed();
+
+		HideBiddingButtons(biddingButtons);
+	}
+
+	public void ShowBiddingButtons()
+	{
+		biddingButtons.SetActive(true);
+
+		if (GameMode == "Tutorial")
+		{
+			var button = biddingButtons.GetComponentsInChildren<Button>().First(b => b.name == "2");
+			button.interactable = true;
+			return;
+		}
+
+		foreach (var button in biddingButtons.GetComponentsInChildren<Button>())
+		{
+			if (int.Parse(button.name) <= handSize)
+			{
+				button.interactable = true;
+			}
+		}
+	}
+
+	public IEnumerator ButtonPressed()
+	{
+		yield return new WaitUntil(() =>
+			biddingButtons.GetComponentsInChildren<Button>()
+				.Any(b => b.gameObject.GetComponent<BiddingButton>().IsClicked));
+	}
+
+	public void HideBiddingButtons(GameObject biddingBox)
+	{
+		foreach (var button in biddingBox.GetComponentsInChildren<Button>())
+		{
+			button.interactable = false;
+			button.gameObject.GetComponent<BiddingButton>().Reset();
+		}
+
+		biddingBox.SetActive(false);
+	}
+
+	public void SetPlayerBid(int bid) => ServiceLocator.GetSingleton<Scoring>().NewBid(0, bid);
+
 	public void UpdateDealer(int dealerId)
 	{
 		Dealer = (PlayerPosition)dealerId;
@@ -67,8 +119,8 @@ public class GameManager : ManagerBase
 		var tricksWon = scoring.Tricks[playerId];
 		var bid = scoring.Bids[playerId];
 
-		var textObject = Hands.First(h => h.Id == playerId).GetComponentsInChildren<TextMeshProUGUI>().First(o => o.name == "Label");
-		textObject.text = $"{(PlayerPosition)playerId} - {tricksWon}/{bid}";
+		var textObject = Hands.First(h => h.Id == playerId).GetComponentsInChildren<TextMeshPro>().First(o => o.name == "Label");
+		textObject.text = $"{(PlayerPosition)playerId} \n {tricksWon}/{bid}";
 
 		if (tricksWon > bid)
 		{
@@ -80,7 +132,7 @@ public class GameManager : ManagerBase
 			textObject.color = Color.green;
 		}
 
-		if (tricksWon < bid)
+		if (tricksWon == bid -1)
 		{
 			textObject.color = Color.yellow;
 		}
