@@ -21,6 +21,11 @@ public class Scoring : SingletonBase
 		Bids = new int[4];
 		Tricks = new int[4];
 
+		if (ServiceLocator.GetManager<GameManager>().GameMode != "Tutorial") StartRound();
+	}
+
+	public void StartRound()
+	{
 		var roundManager = Object.Instantiate(ServiceLocator.GetManager<GameManager>().roundManagerPrefab);
 		roundManager.name = "RoundManager";
 		ServiceLocator.GetManager<RoundManager>();

@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public static class NpcBehaviour
+public class NpcBehaviour : SingletonBase
 {
+	private readonly WaitForSeconds _timeDelay = new(1.0f);
+
 	#region NPC Bids
-	public static void BidWest()
+	public IEnumerator BidWest()
 	{
 		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
 			ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.West, 1);
+			yield break;
 		}
 
 		// West NPC behaviour here
@@ -19,11 +22,12 @@ public static class NpcBehaviour
 
 	}
 
-	public static void BidNorth()
+	public IEnumerator BidNorth()
 	{
 		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
 			ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.North, 1);
+			yield break;
 		}
 
 		// North NPC behaviour here
@@ -31,11 +35,12 @@ public static class NpcBehaviour
 
 	}
 
-	public static void BidEast()
+	public IEnumerator BidEast()
 	{
 		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
 			ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.East, 3);
+			yield break;
 		}
 
 		// East NPC behaviour here
@@ -46,20 +51,20 @@ public static class NpcBehaviour
 	#endregion
 
 	#region NPC Play Cards
-	public static void PlayCardWest()
+	public IEnumerator PlayCardWest()
 	{
 		var hand = ServiceLocator.GetManager<GameManager>().Hands.First(h => h.Id == (int)PlayerPosition.West);
+		var roundManager = ServiceLocator.GetManager<RoundManager>();
 
-		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
+		while (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
-			PlayCardWestTutorial(hand);
-			return;
+			yield return PlayCardWestTutorial(hand);
+			yield return new WaitWhile(() => roundManager.waitingForWest);
 		}
 
 		var tricksBid = ServiceLocator.GetSingleton<Scoring>().Bids[(int)PlayerPosition.West];
 		var tricksWon = ServiceLocator.GetSingleton<Scoring>().Tricks[(int)PlayerPosition.West];
 
-		var roundManager = ServiceLocator.GetManager<RoundManager>();
 		var cardsPlayed = PlayerPosition.West.CardsPlayed(roundManager.forehand);
 
 		// West NPC behaviour here
@@ -78,20 +83,20 @@ public static class NpcBehaviour
 		roundManager.GoToNextPlayer();
 	}
 
-	public static void PlayCardNorth()
+	public IEnumerator PlayCardNorth()
 	{
 		var hand = ServiceLocator.GetManager<GameManager>().Hands.First(h => h.Id == (int)PlayerPosition.North);
+		var roundManager = ServiceLocator.GetManager<RoundManager>();
 
-		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
+		while (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
-			PlayCardNorthTutorial(hand);
-			return;
+			yield return PlayCardNorthTutorial(hand);
+			yield return new WaitWhile(() => roundManager.waitingForNorth);
 		}
 
 		var tricksBid = ServiceLocator.GetSingleton<Scoring>().Bids[(int)PlayerPosition.North];
 		var tricksWon = ServiceLocator.GetSingleton<Scoring>().Tricks[(int)PlayerPosition.North];
 
-		var roundManager = ServiceLocator.GetManager<RoundManager>();
 		var cardsPlayed = PlayerPosition.North.CardsPlayed(roundManager.forehand);
 
 		// North NPC behaviour here
@@ -109,20 +114,20 @@ public static class NpcBehaviour
 		roundManager.GoToNextPlayer();
 	}
 
-	public static void PlayCardEast()
+	public IEnumerator PlayCardEast()
 	{
 		var hand = ServiceLocator.GetManager<GameManager>().Hands.First(h => h.Id == (int)PlayerPosition.East);
+		var roundManager = ServiceLocator.GetManager<RoundManager>();
 
-		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
+		while (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
-			PlayCardEastTutorial(hand);
-			return;
+			yield return PlayCardEastTutorial(hand);
+			yield return new WaitWhile(() => roundManager.waitingForEast);
 		}
 
 		var tricksBid = ServiceLocator.GetSingleton<Scoring>().Bids[(int)PlayerPosition.East];
 		var tricksWon = ServiceLocator.GetSingleton<Scoring>().Tricks[(int)PlayerPosition.East];
 
-		var roundManager = ServiceLocator.GetManager<RoundManager>();
 		var cardsPlayed = PlayerPosition.East.CardsPlayed(roundManager.forehand);
 
 		// East NPC behaviour here
@@ -142,42 +147,81 @@ public static class NpcBehaviour
 	}
 	#endregion
 
-	public static int CardsPlayed(this PlayerPosition playerId, int forehand) => forehand + 4 - (int)playerId;
-
-
 	#region Tutorial Methods
-	private static IEnumerator PlayCardWestTutorial(Hand west)
+	private IEnumerator PlayCardWestTutorial(Hand west)
 	{
 		foreach (var (rank, suit) in GetWestCards())
 		{
+			yield return new WaitUntil(() =>
+				ServiceLocator.GetManager<RoundManager>().waitingForWest &&
+				ServiceLocator.GetManager<RoundManager>().nextPlayer == (int)PlayerPosition.West);
+
 			var card = west.FindCard(rank, suit);
-			west.PlayCard(card);
-			yield break;
+			if (card != null)
+			{
+				yield return west.PlayCard(card);
+			}
+
+			if (card.Equals(CardRank.Queen, CardSuit.Spades))
+			{
+				yield return _timeDelay;
+				yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+			}
+
+			ServiceLocator.GetManager<RoundManager>().waitingForWest = false;
 		}
 	}
 
-	private static IEnumerator PlayCardNorthTutorial(Hand north)
+	private IEnumerator PlayCardNorthTutorial(Hand north)
 	{
 		foreach (var (rank, suit) in GetNorthCards())
 		{
+			yield return new WaitUntil(() =>
+				ServiceLocator.GetManager<RoundManager>().waitingForNorth &&
+				ServiceLocator.GetManager<RoundManager>().nextPlayer == (int)PlayerPosition.North);
+
 			var card = north.FindCard(rank, suit);
-			north.PlayCard(card);
-			yield break;
+			if (card != null)
+			{
+				yield return north.PlayCard(card);
+			}
+
+			if (card.Equals(CardRank.Two, CardSuit.Diamonds))
+			{
+				yield return _timeDelay;
+				yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+			}
+
+			ServiceLocator.GetManager<RoundManager>().waitingForNorth = false;
 		}
 	}
 
-	private static IEnumerator PlayCardEastTutorial(Hand east)
+	private IEnumerator PlayCardEastTutorial(Hand east)
 	{
 		foreach (var (rank, suit) in GetEastCards())
 		{
+			yield return new WaitUntil(() =>
+				ServiceLocator.GetManager<RoundManager>().waitingForEast &&
+				ServiceLocator.GetManager<RoundManager>().nextPlayer == (int)PlayerPosition.East);
+
 			var card = east.FindCard(rank, suit);
-			east.PlayCard(card);
-			yield break;
+			if (card != null)
+			{
+				yield return east.PlayCard(card);
+			}
+
+			if (card.Equals(CardRank.Eight, CardSuit.Diamonds))
+			{
+				yield return _timeDelay;
+				yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+			}
+
+			ServiceLocator.GetManager<RoundManager>().waitingForEast = false;
 		}
 	}
 
 	#region Hands
-	private static IEnumerable<(CardRank rank, CardSuit suit)> GetWestCards()
+	private IEnumerable<(CardRank rank, CardSuit suit)> GetWestCards()
 	{
 		yield return (CardRank.Queen, CardSuit.Spades);
 		yield return (CardRank.Six, CardSuit.Spades);
@@ -186,7 +230,7 @@ public static class NpcBehaviour
 		yield return (CardRank.Queen, CardSuit.Hearts);
 	}
 
-	private static IEnumerable<(CardRank rank, CardSuit suit)> GetNorthCards()
+	private IEnumerable<(CardRank rank, CardSuit suit)> GetNorthCards()
 	{
 		yield return (CardRank.Two, CardSuit.Diamonds);
 		yield return (CardRank.Five, CardSuit.Clubs);
@@ -195,7 +239,7 @@ public static class NpcBehaviour
 		yield return (CardRank.Seven, CardSuit.Clubs);
 	}
 
-	private static IEnumerable<(CardRank rank, CardSuit suit)> GetEastCards()
+	private IEnumerable<(CardRank rank, CardSuit suit)> GetEastCards()
 	{
 		yield return (CardRank.Eight, CardSuit.Diamonds);
 		yield return (CardRank.Jack, CardSuit.Clubs);

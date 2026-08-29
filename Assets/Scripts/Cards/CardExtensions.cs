@@ -1,4 +1,7 @@
-﻿public static class CardExtensions
+﻿using System;
+using Unity.VisualScripting;
+
+public static class CardExtensions
 {
 	public static CardSuit TrumpSuit { get; private set; }
 
@@ -23,6 +26,9 @@
 		// Finally, compare rank. There are no ties.
 		return left.Rank > right.Rank ? left : right;
 	}
+
+	// Returns true if supplied suit and rank are equal to that of the card
+	public static bool Equals(this Card card, CardRank rank, CardSuit suit) => card.Rank == rank && card.Suit == suit;
 
 	// Override method for assigning rank symbols to text
 	public static string ToString(this CardRank rank) => rank switch

@@ -8,8 +8,6 @@ using TMPro;
 
 public class GameManager : ManagerBase
 {
-	protected int _maxHandSize;
-
 	public int handSize;
 	public Sprite cardBack;
 	public CardDeck deckPrefab;
@@ -22,12 +20,16 @@ public class GameManager : ManagerBase
 	public string GameMode { get; protected set; }
 	public int RoundNumber { get; protected set; } = 1;
 
-	private Scoring _scoring;
+	protected int _maxHandSize;
+	private Coroutine _animateLabels;
 
 	public virtual void Awake()
 	{
 		// Create New Scoring Singleton
-		_scoring ??= ServiceLocator.GetSingleton<Scoring>();
+		ServiceLocator.GetSingleton<Scoring>();
+
+		// Create New NpcBehaviour Singleton
+		ServiceLocator.GetSingleton<NpcBehaviour>();
 
 		// Create Hands
 		Hands = FindFirstObjectByType<Canvas>().GetComponentsInChildren<Hand>();
@@ -51,6 +53,7 @@ public class GameManager : ManagerBase
 		Deck = Instantiate(deckPrefab, new Vector3(360, 173), Quaternion.identity, FindFirstObjectByType<Canvas>().transform);
 		Deck.transform.localScale = new Vector3(0.75f, 0.75f);
 		Deck.name = deckPrefab.name;
+		Deck.transform.SetSiblingIndex(Deck.transform.parent.childCount - 2);
 
 		ServiceLocator.GetSingleton<Scoring>().NewRound();
 	}
@@ -60,6 +63,11 @@ public class GameManager : ManagerBase
 
 	public IEnumerator GetPlayerBid()
 	{
+		if (GameMode == "Tutorial")
+		{
+			yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+		}
+
 		ShowBiddingButtons();
 
 		yield return ButtonPressed();
@@ -115,12 +123,11 @@ public class GameManager : ManagerBase
 
 	public void UpdateLabel(int playerId)
 	{
-		var scoring = ServiceLocator.GetSingleton<Scoring>();
-		var tricksWon = scoring.Tricks[playerId];
-		var bid = scoring.Bids[playerId];
+		var tricksWon = ServiceLocator.GetSingleton<Scoring>().Tricks[playerId];
+		var bid = ServiceLocator.GetSingleton<Scoring>().Bids[playerId];
 
-		var textObject = Hands.First(h => h.Id == playerId).GetComponentsInChildren<TextMeshPro>().First(o => o.name == "Label");
-		textObject.text = $"{(PlayerPosition)playerId} \n {tricksWon}/{bid}";
+		var textObject = Hands.First(h => h.Id == playerId).GetComponentsInChildren<TextMeshProUGUI>().First(o => o.name == "Label");
+		textObject.text = $"{(PlayerPosition)playerId}\n{tricksWon}/{bid}";
 
 		if (tricksWon > bid)
 		{
@@ -136,8 +143,30 @@ public class GameManager : ManagerBase
 		{
 			textObject.color = Color.yellow;
 		}
+
+		if (_animateLabels != null)
+		{
+			StopCoroutine(_animateLabels);
+		}
+
+		_animateLabels = StartCoroutine(AnimateText(textObject));
 	}
 
+	public IEnumerator AnimateText(TMP_Text text)
+	{
+		var timer = 0.0f;
+		var shrinkTime = 0.5f;
+
+		var baseSize = text.fontSize;
+		text.fontSize += 20.0f;
+
+		while (timer < shrinkTime)
+		{
+			timer += Time.deltaTime;
+			text.fontSize = Mathf.Lerp(baseSize + 20.0f, baseSize, timer / shrinkTime);
+			yield return null;
+		}
+	}
 
 	// Should only be called at end of game, or when user quits game from submenu
 	public void AtEndOfGame()
@@ -146,9 +175,18 @@ public class GameManager : ManagerBase
 
 
 		// Destroy dependencies
+		ServiceLocator.DestroySingleton<NpcBehaviour>();
 		ServiceLocator.DestroySingleton<Scoring>();
 
 		// Return to Main Menu
 		SceneManager.LoadScene("MainMenu");
+	}
+
+	public void OrderHands()
+	{
+		foreach (var hand in Hands)
+		{
+			hand.OrderHand();
+		}
 	}
 }
