@@ -12,7 +12,7 @@ public class NpcBehaviour : SingletonBase
 	{
 		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
-			ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.West, 1);
+			ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.West, 2);
 			yield break;
 		}
 
@@ -80,6 +80,7 @@ public class NpcBehaviour : SingletonBase
 
 		}
 
+		//yield return _timeDelay;
 		roundManager.GoToNextPlayer();
 	}
 
@@ -111,6 +112,7 @@ public class NpcBehaviour : SingletonBase
 
 		}
 
+		//yield return _timeDelay;
 		roundManager.GoToNextPlayer();
 	}
 
@@ -143,6 +145,7 @@ public class NpcBehaviour : SingletonBase
 
 		}
 
+		//yield return _timeDelay;
 		roundManager.GoToNextPlayer();
 	}
 	#endregion
@@ -156,16 +159,27 @@ public class NpcBehaviour : SingletonBase
 				ServiceLocator.GetManager<RoundManager>().waitingForWest &&
 				ServiceLocator.GetManager<RoundManager>().nextPlayer == (int)PlayerPosition.West);
 
+			yield return _timeDelay;
+
 			var card = west.FindCard(rank, suit);
 			if (card != null)
 			{
-				yield return west.PlayCard(card);
+				if (card.Equals(CardRank.Jack, CardSuit.Hearts) ||
+					card.Equals(CardRank.Six, CardSuit.Spades))
+				{
+					yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+					yield return _timeDelay;
+				}
+
+				west.PlayCardFromHand(card);
 			}
+
+			yield return _timeDelay;
 
 			if (card.Equals(CardRank.Queen, CardSuit.Spades))
 			{
-				yield return _timeDelay;
 				yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+				yield return _timeDelay;
 			}
 
 			ServiceLocator.GetManager<RoundManager>().waitingForWest = false;
@@ -183,13 +197,16 @@ public class NpcBehaviour : SingletonBase
 			var card = north.FindCard(rank, suit);
 			if (card != null)
 			{
-				yield return north.PlayCard(card);
+				north.PlayCardFromHand(card);
 			}
 
-			if (card.Equals(CardRank.Two, CardSuit.Diamonds))
+			yield return _timeDelay;
+
+			if (card.Equals(CardRank.Five, CardSuit.Diamonds) ||
+				card.Equals(CardRank.Five, CardSuit.Clubs))
 			{
-				yield return _timeDelay;
 				yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+				yield return _timeDelay;
 			}
 
 			ServiceLocator.GetManager<RoundManager>().waitingForNorth = false;
@@ -207,13 +224,16 @@ public class NpcBehaviour : SingletonBase
 			var card = east.FindCard(rank, suit);
 			if (card != null)
 			{
-				yield return east.PlayCard(card);
+				east.PlayCardFromHand(card);
 			}
 
-			if (card.Equals(CardRank.Eight, CardSuit.Diamonds))
+			yield return _timeDelay;
+
+			if (card.Equals(CardRank.Eight, CardSuit.Diamonds) ||
+				card.Equals(CardRank.Nine, CardSuit.Hearts))
 			{
-				yield return _timeDelay;
 				yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+				yield return _timeDelay;
 			}
 
 			ServiceLocator.GetManager<RoundManager>().waitingForEast = false;
@@ -224,28 +244,28 @@ public class NpcBehaviour : SingletonBase
 	private IEnumerable<(CardRank rank, CardSuit suit)> GetWestCards()
 	{
 		yield return (CardRank.Queen, CardSuit.Spades);
-		yield return (CardRank.Six, CardSuit.Spades);
+		yield return (CardRank.Six, CardSuit.Clubs);
 		yield return (CardRank.Jack, CardSuit.Hearts);
-		yield return (CardRank.Eight, CardSuit.Clubs);
+		yield return (CardRank.Six, CardSuit.Spades);
 		yield return (CardRank.Queen, CardSuit.Hearts);
 	}
 
 	private IEnumerable<(CardRank rank, CardSuit suit)> GetNorthCards()
 	{
-		yield return (CardRank.Two, CardSuit.Diamonds);
+		yield return (CardRank.Five, CardSuit.Diamonds);
 		yield return (CardRank.Five, CardSuit.Clubs);
 		yield return (CardRank.Three, CardSuit.Hearts);
-		yield return (CardRank.Nine, CardSuit.Hearts);
 		yield return (CardRank.Seven, CardSuit.Clubs);
+		yield return (CardRank.Three, CardSuit.Diamonds);
 	}
 
 	private IEnumerable<(CardRank rank, CardSuit suit)> GetEastCards()
 	{
 		yield return (CardRank.Eight, CardSuit.Diamonds);
 		yield return (CardRank.Jack, CardSuit.Clubs);
-		yield return (CardRank.Three, CardSuit.Diamonds);
-		yield return (CardRank.Two, CardSuit.Clubs);
 		yield return (CardRank.Ten, CardSuit.Hearts);
+		yield return (CardRank.Two, CardSuit.Clubs);
+		yield return (CardRank.Nine, CardSuit.Hearts);
 	}
 	#endregion
 

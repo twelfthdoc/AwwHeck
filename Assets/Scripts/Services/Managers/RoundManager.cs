@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -17,12 +18,11 @@ public class RoundManager : ManagerBase
 	public int tricksPlayed = 0;
 
 	private CardSuit? _suitLed;
-	private bool _waitingForBids = true;
 	private bool _biddingInProgress = false;
+	private bool _waitingForBids = true;
 	private readonly WaitForSeconds _timeDelay = new(1.0f);
 
 	public IList<Hand> Hands { get; set; }
-	public bool IsPlayerTurn => nextPlayer == (int)PlayerPosition.South;
 
 	public void Awake()
 	{
@@ -55,35 +55,35 @@ public class RoundManager : ManagerBase
 	{
 		if (_suitLed == null && Hands.First(h => h.Id == forehand).transform.Find("PlayedCard").childCount != 0)
 		{
-			_suitLed = Hands.First(h => h.Id == forehand).transform.Find("PlayedCard").GetChild(0).gameObject.GetComponent<Card>().Suit;
+			_suitLed = Hands.First(h => h.Id == forehand).transform.Find("PlayedCard").gameObject.GetComponentInChildren<Card>().Suit;
 		}
 
 		if (Hands.All(h => h.transform.Find("PlayedCard").childCount > 0))
 		{
-			EvaluateTrick();
-
-			foreach (var hand in Hands)
-			{
-				Destroy(hand.transform.Find("PlayedCard").GetChild(0).gameObject);
-			}
+			var winningPlayer = EvaluateTrick();
+			ServiceLocator.GetSingleton<Scoring>().TrickWon(winningPlayer);
+			DestroyPlayedCards();
+			return;
 		}
 
-		if (tricksPlayed == ServiceLocator.GetManager<GameManager>().handSize)
+		if (!_biddingInProgress)
 		{
-			ServiceLocator.GetSingleton<Scoring>().ScoreRound();
-		}
-
-		if (_waitingForBids)
-		{
-			if (!_biddingInProgress)
+			if (_waitingForBids)
 			{
 				_biddingInProgress = true;
 				StartCoroutine(GetBids());
+				return;
 			}
-		}
-		else if (!_biddingInProgress && !waitingForPlayer && !waitingForWest && !waitingForNorth && !waitingForEast)
-		{
-			StartCoroutine(PlayCards());
+
+			if (!waitingForPlayer && !waitingForWest && !waitingForNorth && !waitingForEast)
+			{
+				if (tricksPlayed == ServiceLocator.GetManager<GameManager>().handSize)
+				{
+					ServiceLocator.GetSingleton<Scoring>().ScoreRound();
+				}
+
+				StartCoroutine(PlayCards());
+			}
 		}
 	}
 
@@ -142,7 +142,7 @@ public class RoundManager : ManagerBase
 
 	public CardSuit? SuitToFollow() => _suitLed;
 
-	public void EvaluateTrick()
+	public int EvaluateTrick()
 	{
 		var hands = ServiceLocator.GetManager<GameManager>().Hands;
 		var cards = new Card[4];
@@ -158,25 +158,19 @@ public class RoundManager : ManagerBase
 		var winningPlayer = Array.IndexOf(cards, winningCard);
 		tricksPlayed++;
 
-		ServiceLocator.GetSingleton<Scoring>().TrickWon(winningPlayer);
 		forehand = winningPlayer;
-		nextPlayer = forehand;
+		nextPlayer = winningPlayer;
 		_suitLed = null;
 
-		switch (forehand)
+		//await Awaitable.WaitForSecondsAsync(1.0f);
+		return winningPlayer;
+	}
+
+	public void DestroyPlayedCards()
+	{
+		foreach (var hand in Hands)
 		{
-			case (int)PlayerPosition.South:
-				waitingForPlayer = true;
-				break;
-			case (int)PlayerPosition.West:
-				waitingForWest = true;
-				break;
-			case (int)PlayerPosition.North:
-				waitingForNorth = true;
-				break;
-			case (int)PlayerPosition.East:
-				waitingForEast = true;
-				break;
+			Destroy(hand.transform.Find("PlayedCard").gameObject.GetComponentInChildren<Card>().gameObject);
 		}
 	}
 
@@ -185,42 +179,32 @@ public class RoundManager : ManagerBase
 		switch (nextPlayer)
 		{
 			case (int)PlayerPosition.South:
-				if (!waitingForPlayer)
+				waitingForPlayer = true;
+				if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 				{
-					waitingForPlayer = true;
-					yield return Hands.First(o => o.IsPlayer).ToggleCardButtons(waitingForPlayer, _suitLed);
-					yield return new WaitUntil(() => !waitingForPlayer);
+					yield return new WaitUntil(() => !ServiceLocator.GetManager<TutorialManager>().message.activeSelf);
 				}
-				yield break;
+				yield return Hands.First(o => o.IsPlayer).ToggleCardButtons(waitingForPlayer, _suitLed);
+				yield return new WaitUntil(() => !waitingForPlayer);
+				break;
 
-			case (int)PlayerPosition.West:
-				if (!waitingForWest)
-				{
-					waitingForWest = true;
-					yield return new WaitUntil(() => !waitingForWest);
-					yield return _timeDelay;
-				}
-				yield break;
+			case (int)PlayerPosition.West:				
+				waitingForWest = true;
+				yield return new WaitUntil(() => !waitingForWest);				
+				break;
 
-			case (int)PlayerPosition.North:
-				if (!waitingForNorth)
-				{
-					waitingForNorth = true;
-					yield return _timeDelay;
-					yield return new WaitUntil(() => !waitingForNorth);
-				}
-				yield break;
+			case (int)PlayerPosition.North:				
+				waitingForNorth = true;
+				yield return new WaitUntil(() => !waitingForNorth);
+				break;
 
 			case (int)PlayerPosition.East:
-				if (!waitingForEast)
-				{
-					waitingForEast = true;
-					yield return _timeDelay;
-					yield return new WaitUntil(() => !waitingForEast);
-				}
-				yield break;
+				waitingForEast = true;
+				yield return new WaitUntil(() => !waitingForEast);
+				break;
 		}
 
+		yield return _timeDelay;
 		yield return new WaitForEndOfFrame();
 	}
 }

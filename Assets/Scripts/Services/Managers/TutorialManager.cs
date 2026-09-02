@@ -93,35 +93,35 @@ public class TutorialManager : GameManager
 		yield return (CardRank.Three, CardSuit.Spades);
 		yield return (CardRank.Four, CardSuit.Clubs);
 		yield return (CardRank.Six, CardSuit.Diamonds);
+		yield return (CardRank.Eight, CardSuit.Clubs);
 		yield return (CardRank.Jack, CardSuit.Spades);
-		yield return (CardRank.Six, CardSuit.Clubs);
 	}
 
 	private IEnumerable<(CardRank rank, CardSuit suit)> GetWestCards()
 	{
 		yield return (CardRank.Queen, CardSuit.Spades);
-		yield return (CardRank.Six, CardSuit.Spades);
+		yield return (CardRank.Six, CardSuit.Clubs);
 		yield return (CardRank.Jack, CardSuit.Hearts);
-		yield return (CardRank.Eight, CardSuit.Clubs);
+		yield return (CardRank.Six, CardSuit.Spades);
 		yield return (CardRank.Queen, CardSuit.Hearts);
 	}
 
 	private IEnumerable<(CardRank rank, CardSuit suit)> GetNorthCards()
 	{
-		yield return (CardRank.Two, CardSuit.Diamonds);
+		yield return (CardRank.Five, CardSuit.Diamonds);
 		yield return (CardRank.Five, CardSuit.Clubs);
 		yield return (CardRank.Three, CardSuit.Hearts);
-		yield return (CardRank.Nine, CardSuit.Hearts);
 		yield return (CardRank.Seven, CardSuit.Clubs);
+		yield return (CardRank.Three, CardSuit.Diamonds);
 	}
 
 	private IEnumerable<(CardRank rank, CardSuit suit)> GetEastCards()
 	{
 		yield return (CardRank.Eight, CardSuit.Diamonds);
-		yield return (CardRank.Three, CardSuit.Diamonds);
 		yield return (CardRank.Jack, CardSuit.Clubs);
-		yield return (CardRank.Two, CardSuit.Clubs);
 		yield return (CardRank.Ten, CardSuit.Hearts);
+		yield return (CardRank.Two, CardSuit.Clubs);
+		yield return (CardRank.Nine, CardSuit.Hearts);
 	}
 	#endregion
 

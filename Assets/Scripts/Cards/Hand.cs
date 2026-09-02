@@ -71,12 +71,12 @@ public class Hand : MonoBehaviour
 		}
 	}
 
-	public IEnumerator PlayCard(Card card)
+	public void PlayCardFromHand(Card card)
 	{
 		if (!HasCard(card))
 		{
 			Debug.LogWarning("Card not found in hand!");
-			yield break;
+			return;
 		}
 
 		card.gameObject.GetComponent<Image>().sprite = ServiceLocator.GetManager<GameManager>().Deck.UpdateCardSprite(card.Rank, card.Suit);
@@ -88,11 +88,11 @@ public class Hand : MonoBehaviour
 		OrderHand();
 
 		ServiceLocator.GetManager<RoundManager>().GoToNextPlayer();
-		yield return new WaitForEndOfFrame();
 
 		if (IsPlayer)
 		{
-			yield return ToggleCardButtons(false);
+			StartCoroutine(ToggleCardButtons(false));
+			ServiceLocator.GetManager<RoundManager>().waitingForPlayer = false;
 		}
 	}
 
@@ -105,24 +105,24 @@ public class Hand : MonoBehaviour
 			switch (Cards.Count)
 			{
 				case 5:
-					Cards.First(c => c.Equals(CardRank.Three, CardSuit.Spades)).GetComponent<Button>().enabled = true;
 					yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+					Cards.First(c => c.Equals(CardRank.Three, CardSuit.Spades)).GetComponent<Button>().enabled = true;
 					yield break;
 				case 4:
-					Cards.First(c => c.Equals(CardRank.Four, CardSuit.Clubs)).GetComponent<Button>().enabled = true;
 					yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+					Cards.First(c => c.Equals(CardRank.Four, CardSuit.Clubs)).GetComponent<Button>().enabled = true;
 					yield break;
 				case 3:
-					Cards.First(c => c.Equals(CardRank.Six, CardSuit.Diamonds)).GetComponent<Button>().enabled = true;
 					yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+					Cards.First(c => c.Equals(CardRank.Six, CardSuit.Diamonds)).GetComponent<Button>().enabled = true;
 					yield break;
 				case 2:
-					Cards.First(c => c.Equals(CardRank.Jack, CardSuit.Spades)).GetComponent<Button>().enabled = true;
 					yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+					Cards.First(c => c.Equals(CardRank.Eight, CardSuit.Clubs)).GetComponent<Button>().enabled = true;
 					yield break;
 				case 1:
-					Cards.First(c => c.Equals(CardRank.Six, CardSuit.Clubs)).GetComponent<Button>().enabled = true;
 					yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+					Cards.First(c => c.Equals(CardRank.Jack, CardSuit.Spades)).GetComponent<Button>().enabled = true;
 					yield break;
 				default:
 					Debug.Log("Should never fall to this case!", this);
