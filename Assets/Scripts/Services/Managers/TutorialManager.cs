@@ -1,28 +1,58 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class TutorialManager : GameManager
 {
-	public const CardSuit TrumpSuit = CardSuit.Diamonds;
+	public GameObject message;
+
+	public bool SendNextMessage { get; set; }
+
+	private bool _inSetup = true;
 
 	public override void Awake()
 	{
 		GameMode ??= "Tutorial";
+		StartCoroutine(ServiceLocator.GetSingleton<TutorialMessages>().UpdateMessage());
 		base.Awake();
-
-		//Dealer = PlayerPosition.South;
-		//Deck.UpdateDealer(Dealer);
 	}
 
-	public void Start()
+	public void Update()
 	{
+		if (_inSetup)
+		{
+			_inSetup = false;
+			StartCoroutine(Setup());
+		}
+	}
+
+	public IEnumerator Setup()
+	{
+		yield return SendMessage();
+		yield return SendMessage();
+
+		SetPlayerHands();
+
+		yield return SendMessage();
+
 		var trumpCard = Deck.GetSpecificCard(CardRank.Four, CardSuit.Diamonds);
 		Deck.Cards.Insert(0, trumpCard);
 		Deck.UpdateTrumpSuit();
+		OrderHands();
 
-		SetPlayerHands();
+		ServiceLocator.GetSingleton<Scoring>().StartRound();
 	}
+
+	public IEnumerator SendMessage()
+	{
+		SendNextMessage = true;
+		yield return new WaitUntil(() => !SendNextMessage);
+		yield return new WaitForEndOfFrame();
+	}
+
+	public void OnDestroy() => ServiceLocator.DestroySingleton<TutorialMessages>();
 
 	#region Helper Methods
 	private void SetPlayerHands()
@@ -54,10 +84,7 @@ public class TutorialManager : GameManager
 			Hands.First(h => h.Id == (int)PlayerPosition.East).AddCard(card);
 		}
 
-		foreach (var hand in Hands)
-		{
-			hand.OrderHand();
-		}
+		OrderHands();
 	}
 
 	#region Hands
@@ -66,35 +93,35 @@ public class TutorialManager : GameManager
 		yield return (CardRank.Three, CardSuit.Spades);
 		yield return (CardRank.Four, CardSuit.Clubs);
 		yield return (CardRank.Six, CardSuit.Diamonds);
+		yield return (CardRank.Eight, CardSuit.Clubs);
 		yield return (CardRank.Jack, CardSuit.Spades);
-		yield return (CardRank.Six, CardSuit.Clubs);
 	}
 
 	private IEnumerable<(CardRank rank, CardSuit suit)> GetWestCards()
 	{
 		yield return (CardRank.Queen, CardSuit.Spades);
-		yield return (CardRank.Six, CardSuit.Spades);
+		yield return (CardRank.Six, CardSuit.Clubs);
 		yield return (CardRank.Jack, CardSuit.Hearts);
-		yield return (CardRank.Eight, CardSuit.Clubs);
+		yield return (CardRank.Six, CardSuit.Spades);
 		yield return (CardRank.Queen, CardSuit.Hearts);
 	}
 
 	private IEnumerable<(CardRank rank, CardSuit suit)> GetNorthCards()
 	{
-		yield return (CardRank.Two, CardSuit.Diamonds);
+		yield return (CardRank.Five, CardSuit.Diamonds);
 		yield return (CardRank.Five, CardSuit.Clubs);
 		yield return (CardRank.Three, CardSuit.Hearts);
-		yield return (CardRank.Nine, CardSuit.Hearts);
 		yield return (CardRank.Seven, CardSuit.Clubs);
+		yield return (CardRank.Three, CardSuit.Diamonds);
 	}
 
 	private IEnumerable<(CardRank rank, CardSuit suit)> GetEastCards()
 	{
 		yield return (CardRank.Eight, CardSuit.Diamonds);
-		yield return (CardRank.Three, CardSuit.Diamonds);
 		yield return (CardRank.Jack, CardSuit.Clubs);
-		yield return (CardRank.Two, CardSuit.Clubs);
 		yield return (CardRank.Ten, CardSuit.Hearts);
+		yield return (CardRank.Two, CardSuit.Clubs);
+		yield return (CardRank.Nine, CardSuit.Hearts);
 	}
 	#endregion
 

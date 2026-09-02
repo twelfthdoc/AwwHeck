@@ -2,21 +2,27 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class RoundManager : ManagerBase
 {
+	public bool waitingForPlayer = false;
+	public bool waitingForWest = false;
+	public bool waitingForNorth = false;
+	public bool waitingForEast = false;
 	public int dealerId;
 	public int forehand;
 	public int nextPlayer;
 	public int tricksPlayed = 0;
 
 	private CardSuit? _suitLed;
-	private bool _waitingForBids;
+	private bool _biddingInProgress = false;
+	private bool _waitingForBids = true;
+	private readonly WaitForSeconds _timeDelay = new(1.0f);
 
 	public IList<Hand> Hands { get; set; }
-	public bool IsPlayerTurn => nextPlayer == (int)PlayerPosition.South;
 
 	public void Awake()
 	{
@@ -40,99 +46,103 @@ public class RoundManager : ManagerBase
 		ServiceLocator.GetManager<GameManager>().UpdateDealer(dealerId);
 		Hands = ServiceLocator.GetManager<GameManager>().Hands.ToList();
 
-		_waitingForBids = true;
+		StartCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardWest());
+		StartCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardNorth());
+		StartCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardEast());
 	}
 
 	public void Update()
 	{
 		if (_suitLed == null && Hands.First(h => h.Id == forehand).transform.Find("PlayedCard").childCount != 0)
 		{
-			_suitLed = Hands.First(h => h.Id == forehand).transform.Find("PlayedCard").GetChild(0).gameObject.GetComponent<Card>().Suit;
+			_suitLed = Hands.First(h => h.Id == forehand).transform.Find("PlayedCard").gameObject.GetComponentInChildren<Card>().Suit;
 		}
 
 		if (Hands.All(h => h.transform.Find("PlayedCard").childCount > 0))
 		{
-			EvaluateTrick();
+			var winningPlayer = EvaluateTrick();
+			ServiceLocator.GetSingleton<Scoring>().TrickWon(winningPlayer);
+			DestroyPlayedCards();
+			return;
+		}
 
-			foreach (var hand in Hands)
+		if (!_biddingInProgress)
+		{
+			if (_waitingForBids)
 			{
-				Destroy(hand.transform.Find("PlayedCard").GetChild(0).gameObject);
+				_biddingInProgress = true;
+				StartCoroutine(GetBids());
+				return;
 			}
-		}
 
-		if (tricksPlayed == ServiceLocator.GetManager<GameManager>().handSize)
-		{
-			ServiceLocator.GetSingleton<Scoring>().ScoreRound();
-		}
+			if (!waitingForPlayer && !waitingForWest && !waitingForNorth && !waitingForEast)
+			{
+				if (tricksPlayed == ServiceLocator.GetManager<GameManager>().handSize)
+				{
+					ServiceLocator.GetSingleton<Scoring>().ScoreRound();
+				}
 
-		if (_waitingForBids)
-		{
-			StartCoroutine(nameof(GetBids));
-		}
-		else
-		{
-			if (!IsPlayerTurn)
-			{
-				StartCoroutine(GetNpcToPlayCard(nextPlayer));
-			}
-			else
-			{
-				Hands.First(h => h.IsPlayer).ToggleCardButtons(IsPlayerTurn, _suitLed);
+				StartCoroutine(PlayCards());
 			}
 		}
 	}
 
 	public int NextPlayer(int playerId) => (playerId + 1) % 4;
+	public void GoToNextPlayer() => nextPlayer = NextPlayer(nextPlayer);
 
-	public void GetBids()
+	public IEnumerator GetBids()
 	{
-		// This works for the tutorial, but will probably need some sort of refactor for full game
+		var isTutorial = ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial";
 
-		var timeDelay = 0.0f;
-
-		do
+		if (isTutorial)
 		{
-			GetBid(nextPlayer, timeDelay);
-			GoToNextPlayer();
-			timeDelay += 2.0f;
+			yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
 		}
-		while (nextPlayer != forehand);
 
-		_waitingForBids = false;
+		while (_waitingForBids)
+		{
+			yield return GetBid();
+			if (nextPlayer == dealerId) _waitingForBids = false;
+			GoToNextPlayer();
+		}
+
+		if (isTutorial)
+		{
+			yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+		}
+
+		_biddingInProgress = false;
 	}
 
-	public void GetBid(int playerId, float timeDelay)
+	public IEnumerator GetBid()
 	{
-		switch (playerId)
+		yield return _timeDelay;
+
+		switch (nextPlayer)
 		{
-			case 0:
-				Invoke(nameof(GetPlayerBid), timeDelay);
+			case (int)PlayerPosition.South:
+				yield return ServiceLocator.GetManager<GameManager>().GetPlayerBid();
 				break;
-			case 1:
-				Invoke(nameof(GetBidWest), timeDelay);
+			case (int)PlayerPosition.West:
+				yield return ServiceLocator.GetSingleton<NpcBehaviour>().BidWest();
 				break;
-			case 2:
-				Invoke(nameof(GetBidNorth), timeDelay);
+			case (int)PlayerPosition.North:
+				yield return ServiceLocator.GetSingleton<NpcBehaviour>().BidNorth();
 				break;
-			case 3:
-				Invoke(nameof(GetBidEast), timeDelay);
+			case (int)PlayerPosition.East:
+				yield return ServiceLocator.GetSingleton<NpcBehaviour>().BidEast();
 				break;
 			default:
-				Debug.LogError("");
+				Debug.LogError("Argument outside of range.");
 				break;
 		}
+
+		yield return new WaitForEndOfFrame();
 	}
-
-	public void GetPlayerBid() => StartCoroutine(ServiceLocator.GetManager<GameManager>().GetPlayerBid());
-	public void GetBidWest() => NpcBehaviour.BidWest();
-	public void GetBidNorth() => NpcBehaviour.BidNorth();
-	public void GetBidEast() => NpcBehaviour.BidEast();
-
-	public void GoToNextPlayer() => nextPlayer = NextPlayer(nextPlayer);
 
 	public CardSuit? SuitToFollow() => _suitLed;
 
-	public void EvaluateTrick()
+	public int EvaluateTrick()
 	{
 		var hands = ServiceLocator.GetManager<GameManager>().Hands;
 		var cards = new Card[4];
@@ -148,27 +158,53 @@ public class RoundManager : ManagerBase
 		var winningPlayer = Array.IndexOf(cards, winningCard);
 		tricksPlayed++;
 
-		ServiceLocator.GetSingleton<Scoring>().TrickWon(winningPlayer);
 		forehand = winningPlayer;
+		nextPlayer = winningPlayer;
 		_suitLed = null;
+
+		//await Awaitable.WaitForSecondsAsync(1.0f);
+		return winningPlayer;
 	}
 
-	public IEnumerator GetNpcToPlayCard(int playerId)
+	public void DestroyPlayedCards()
 	{
-		switch (playerId)
+		foreach (var hand in Hands)
 		{
-			case 1:
-				NpcBehaviour.PlayCardWest();
-				yield break;
-			case 2:
-				NpcBehaviour.PlayCardNorth();
-				yield break;
-			case 3:
-				NpcBehaviour.PlayCardEast();
-				yield break;
-			default:
-				Debug.LogWarning($"Player with ID {playerId} passed through. This does not correspond to an NPC player.");
-				yield break;
+			Destroy(hand.transform.Find("PlayedCard").gameObject.GetComponentInChildren<Card>().gameObject);
 		}
+	}
+
+	public IEnumerator PlayCards()
+	{
+		switch (nextPlayer)
+		{
+			case (int)PlayerPosition.South:
+				waitingForPlayer = true;
+				if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
+				{
+					yield return new WaitUntil(() => !ServiceLocator.GetManager<TutorialManager>().message.activeSelf);
+				}
+				yield return Hands.First(o => o.IsPlayer).ToggleCardButtons(waitingForPlayer, _suitLed);
+				yield return new WaitUntil(() => !waitingForPlayer);
+				break;
+
+			case (int)PlayerPosition.West:				
+				waitingForWest = true;
+				yield return new WaitUntil(() => !waitingForWest);				
+				break;
+
+			case (int)PlayerPosition.North:				
+				waitingForNorth = true;
+				yield return new WaitUntil(() => !waitingForNorth);
+				break;
+
+			case (int)PlayerPosition.East:
+				waitingForEast = true;
+				yield return new WaitUntil(() => !waitingForEast);
+				break;
+		}
+
+		yield return _timeDelay;
+		yield return new WaitForEndOfFrame();
 	}
 }

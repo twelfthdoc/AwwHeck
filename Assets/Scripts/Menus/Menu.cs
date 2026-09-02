@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class Menu : MonoBehaviour
+public abstract class Menu : MonoBehaviour
 {
 	public virtual void Open()
 	{

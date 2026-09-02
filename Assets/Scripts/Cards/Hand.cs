@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -70,7 +71,7 @@ public class Hand : MonoBehaviour
 		}
 	}
 
-	public void PlayCard(Card card)
+	public void PlayCardFromHand(Card card)
 	{
 		if (!HasCard(card))
 		{
@@ -86,40 +87,67 @@ public class Hand : MonoBehaviour
 		RemoveCard(card);
 		OrderHand();
 
+		ServiceLocator.GetManager<RoundManager>().GoToNextPlayer();
+
 		if (IsPlayer)
 		{
-			ToggleCardButtons(false);
-
-			if (ServiceLocator.GetManager<RoundManager>().forehand != (int)PlayerPosition.West)
-			{
-				ServiceLocator.GetManager<RoundManager>().GoToNextPlayer();
-			}
+			StartCoroutine(ToggleCardButtons(false));
+			ServiceLocator.GetManager<RoundManager>().waitingForPlayer = false;
 		}
 	}
 
-	public void ToggleCardButtons(bool isPlayerTurn, CardSuit? suitLed = null)
+	public IEnumerator ToggleCardButtons(bool isPlayerTurn, CardSuit? suitLed = null)
 	{
-		if (IsPlayer)
+		if (!IsPlayer) yield break;
+
+		if (isPlayerTurn && ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
-			if (suitLed != null)
+			switch (Cards.Count)
 			{
-				var cards = Cards.Where(c => c.Suit == suitLed);
+				case 5:
+					yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+					Cards.First(c => c.Equals(CardRank.Three, CardSuit.Spades)).GetComponent<Button>().enabled = true;
+					yield break;
+				case 4:
+					yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+					Cards.First(c => c.Equals(CardRank.Four, CardSuit.Clubs)).GetComponent<Button>().enabled = true;
+					yield break;
+				case 3:
+					yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+					Cards.First(c => c.Equals(CardRank.Six, CardSuit.Diamonds)).GetComponent<Button>().enabled = true;
+					yield break;
+				case 2:
+					yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+					Cards.First(c => c.Equals(CardRank.Eight, CardSuit.Clubs)).GetComponent<Button>().enabled = true;
+					yield break;
+				case 1:
+					yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
+					Cards.First(c => c.Equals(CardRank.Jack, CardSuit.Spades)).GetComponent<Button>().enabled = true;
+					yield break;
+				default:
+					Debug.Log("Should never fall to this case!", this);
+					yield break;
+			}
+		}
 
-				if (cards.Count() != 0)
+		if (suitLed != null)
+		{
+			var cards = Cards.Where(c => c.Suit == suitLed.Value);
+
+			if (cards.Count() != 0)
+			{
+				foreach (var card in cards)
 				{
-					foreach (var card in cards)
-					{
-						card.GetComponent<Button>().enabled = isPlayerTurn;
-					}
-
-					return;
+					card.GetComponent<Button>().enabled = isPlayerTurn;
 				}
-			}
 
-			foreach (var card in Cards)
-			{
-				card.GetComponent<Button>().enabled = isPlayerTurn;
+				yield break;
 			}
+		}
+
+		foreach (var card in Cards)
+		{
+			card.GetComponent<Button>().enabled = isPlayerTurn;
 		}
 	}
 }
