@@ -49,4 +49,5 @@ MonoBehaviour:
   deckPrefab: {fileID: 2391210430682146960, guid: 8098d72cdc880584b85556fa68f2a6dc, type: 3}
   biddingButtons: {fileID: 6650527569270655055, guid: 7fb1a7fd090996b48ade6d4e75cf1f78, type: 3}
   roundManagerPrefab: {fileID: 163174995125126393, guid: 01fa1cd1044a8a64491e04ac035a75b8, type: 3}
-  message: {fileID: 0}
+  scoringMessagePrefab: {fileID: 2464762329137309070, guid: a38a21da9bbeb1846b1cf9e0d2c5f44a, type: 3}
+  message: {fileID: 2464762329137309070, guid: 19597f945c65945449a46ffe5b7a68fb, type: 3}

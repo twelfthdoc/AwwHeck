@@ -13,6 +13,7 @@ public class GameManager : ManagerBase
 	public CardDeck deckPrefab;
 	public GameObject biddingButtons;
 	public GameObject roundManagerPrefab;
+	public GameObject scoringMessagePrefab;
 
 	public PlayerPosition Dealer { get; protected set; }
 	public CardDeck Deck { get; protected set; }
@@ -21,6 +22,7 @@ public class GameManager : ManagerBase
 	public int RoundNumber { get; protected set; } = 1;
 
 	protected int _maxHandSize;
+	private static bool _validBid;
 	private Coroutine _animateLabels;
 
 	public virtual void Awake()
@@ -68,11 +70,14 @@ public class GameManager : ManagerBase
 			yield return ServiceLocator.GetManager<TutorialManager>().SendMessage();
 		}
 
+		_validBid = false;
+
 		ShowBiddingButtons();
 
 		yield return ButtonPressed();
+		yield return new WaitUntil(() => _validBid);
 
-		HideBiddingButtons(biddingButtons);
+		HideBiddingButtons();
 	}
 
 	public void ShowBiddingButtons()
@@ -102,18 +107,29 @@ public class GameManager : ManagerBase
 				.Any(b => b.gameObject.GetComponent<BiddingButton>().IsClicked));
 	}
 
-	public void HideBiddingButtons(GameObject biddingBox)
+	public void HideBiddingButtons()
 	{
-		foreach (var button in biddingBox.GetComponentsInChildren<Button>())
+		foreach (var button in biddingButtons.GetComponentsInChildren<Button>())
 		{
 			button.interactable = false;
 			button.gameObject.GetComponent<BiddingButton>().Reset();
 		}
 
-		biddingBox.SetActive(false);
+		biddingButtons.SetActive(false);
 	}
 
-	public void SetPlayerBid(int bid) => ServiceLocator.GetSingleton<Scoring>().NewBid(0, bid);
+	public void SetPlayerBid(int bid)
+	{
+		if (bid == 0)
+		{
+			_validBid = false;
+			return;
+		}
+
+		bid %= 10;
+		ServiceLocator.GetSingleton<Scoring>().NewBid(0, bid);
+		_validBid = true;
+	}
 
 	public void UpdateDealer(int dealerId)
 	{
@@ -167,6 +183,8 @@ public class GameManager : ManagerBase
 			yield return null;
 		}
 	}
+
+	public GameObject InstantiateScoreMessagePrefab() => Instantiate(scoringMessagePrefab, FindFirstObjectByType<Canvas>().transform);
 
 	// Should only be called at end of game, or when user quits game from submenu
 	public void AtEndOfGame()

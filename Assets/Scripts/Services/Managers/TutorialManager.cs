@@ -15,6 +15,7 @@ public class TutorialManager : GameManager
 	public override void Awake()
 	{
 		GameMode ??= "Tutorial";
+		ServiceLocator.GetSingleton<TutorialMessages>();
 		StartCoroutine(ServiceLocator.GetSingleton<TutorialMessages>().UpdateMessage());
 		base.Awake();
 	}
@@ -45,6 +46,22 @@ public class TutorialManager : GameManager
 		ServiceLocator.GetSingleton<Scoring>().StartRound();
 	}
 
+	public void SendFinalMessages() => StartCoroutine(FinalMessages());
+
+	private IEnumerator FinalMessages()
+	{
+		yield return SendMessage();
+		yield return new WaitForEndOfFrame();
+		yield return SendMessage();
+		yield return new WaitForEndOfFrame();
+
+		// Start close down
+		AtEndOfGame();
+	}
+
+	public void OnDestroy() => ServiceLocator.DestroySingleton<TutorialMessages>();
+
+	#region Helper Methods
 	public IEnumerator SendMessage()
 	{
 		SendNextMessage = true;
@@ -52,9 +69,6 @@ public class TutorialManager : GameManager
 		yield return new WaitForEndOfFrame();
 	}
 
-	public void OnDestroy() => ServiceLocator.DestroySingleton<TutorialMessages>();
-
-	#region Helper Methods
 	private void SetPlayerHands()
 	{
 		foreach (var (rank, suit) in GetPlayerCards())

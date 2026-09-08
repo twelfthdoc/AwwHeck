@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+//using System.Threading.Tasks;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -79,7 +79,10 @@ public class RoundManager : ManagerBase
 			{
 				if (tricksPlayed == ServiceLocator.GetManager<GameManager>().handSize)
 				{
-					ServiceLocator.GetSingleton<Scoring>().ScoreRound();
+					enabled = false;
+					StopAllCoroutines();
+					StopRound();
+					StartCoroutine(ServiceLocator.GetSingleton<Scoring>().ScoreRound());
 				}
 
 				StartCoroutine(PlayCards());
@@ -162,7 +165,7 @@ public class RoundManager : ManagerBase
 		nextPlayer = winningPlayer;
 		_suitLed = null;
 
-		//await Awaitable.WaitForSecondsAsync(1.0f);
+		//await Awaitable.WaitForSecondsAsync(1.0f);	// Does NOT play nice with GameManager.AnimateText()!!
 		return winningPlayer;
 	}
 
@@ -206,5 +209,18 @@ public class RoundManager : ManagerBase
 
 		yield return _timeDelay;
 		yield return new WaitForEndOfFrame();
+	}
+
+	public void StopRound()
+	{
+		waitingForPlayer = false;
+		waitingForWest = false;
+		waitingForNorth = false;
+		waitingForEast = false;
+
+		StopCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardWest());
+		StopCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardNorth());
+		StopCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardEast());
+		StopCoroutine(Hands.First(o => o.IsPlayer).ToggleCardButtons(false));
 	}
 }

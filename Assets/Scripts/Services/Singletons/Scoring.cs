@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using TMPro;
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 public class Scoring : SingletonBase
@@ -15,11 +19,13 @@ public class Scoring : SingletonBase
 
 	public int[] Bids;
 	public int[] Tricks;
+	public int[] CurrentScores;
 
 	public void NewRound()
 	{
 		Bids = new int[4];
 		Tricks = new int[4];
+		CurrentScores = new int[4];
 
 		if (ServiceLocator.GetManager<GameManager>().GameMode != "Tutorial") StartRound();
 	}
@@ -43,8 +49,12 @@ public class Scoring : SingletonBase
 		ServiceLocator.GetManager<GameManager>().UpdateLabel(playerId);
 	}
 
-	public bool ScoreRound()
+	public IEnumerator ScoreRound()
 	{
+		// Create Scoring Message
+		var scoringMessage = ServiceLocator.GetManager<GameManager>().InstantiateScoreMessagePrefab();
+		scoringMessage.name = "Scoring Message";
+
 		foreach (PlayerPosition player in Enum.GetValues(typeof(PlayerPosition)))
 		{
 			var bid = Bids[(int)player];
@@ -82,14 +92,41 @@ public class Scoring : SingletonBase
 
 			// Add new scores to the Dictionary
 			Scores.Add((player, roundNumber), newScore);
+			CurrentScores[(int)player] = newScore;
+
+			// Update scores for the player
+			var messageColumn = scoringMessage.transform.Find(player.ToString()).gameObject.GetComponent<TextMeshProUGUI>();
+
+			var message = $"<s>";
+			for (var i = 0; i < roundNumber; i++)
+			{
+				var score = Scores[(player, i)];
+
+				message += $"{score}\n";
+			}
+			message += $"</s><b>{newScore}</b>";
+			messageColumn.text = message;
 		}
 
-		// Display score on screen
+		// Update to show which player is winning
+		var topScore = CurrentScores.First(score => score == CurrentScores.Max());
+		var indices = CurrentScores.Where(o => o == topScore).Select(i => Array.IndexOf(CurrentScores, topScore));
 
+		foreach (var player in indices)
+		{
+			var messageColumn = scoringMessage.transform.Find(((PlayerPosition)player).ToString()).gameObject.GetComponent<TextMeshProUGUI>();
+			messageColumn.color = Color.gold;
+		}
+
+		// Wait for Player to dismiss scorebox
+		yield return new WaitUntil(() => !scoringMessage.activeSelf);
 
 		// Await destruction of RoundManager
 		ServiceLocator.DestroyManager<RoundManager>();
 
-		return true;
+		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
+		{
+			ServiceLocator.GetManager<TutorialManager>().SendFinalMessages();
+		}
 	}
 }
