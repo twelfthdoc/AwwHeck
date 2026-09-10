@@ -6,7 +6,7 @@ public class TutorialMessages : SingletonBase
 {
     public IEnumerator UpdateMessage()
 	{
-		var message = ServiceLocator.GetManager<TutorialManager>().message.GetComponent<Message>();
+		var message = Object.FindFirstObjectByType<Canvas>().GetComponentInChildren<Message>(true);
 
 		if (message.name == "Scoring Message") yield break;
 

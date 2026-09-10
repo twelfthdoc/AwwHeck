@@ -7,11 +7,13 @@ public class MainMenu : Menu
 
 	public void StartGame()
 	{
+		ServiceLocator.DestroyManager<MenuManager>();
 		SceneManager.LoadScene("Game");
 	}
 
 	public void StartTutorial()
 	{
+		ServiceLocator.DestroyManager<MenuManager>();
 		SceneManager.LoadScene("Tutorial");
 	}
 

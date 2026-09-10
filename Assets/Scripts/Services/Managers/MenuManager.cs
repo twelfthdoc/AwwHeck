@@ -5,7 +5,16 @@ public class MenuManager : ManagerBase
 {
 	private readonly Stack<Menu> _menus = new();
 
-	public virtual void OpenMenu(Menu menu)
+	public void Start()
+	{
+		var mainMenu = GetComponentInChildren<MainMenu>();
+		_menus.Push(mainMenu);
+
+		ServiceLocator.DestroyManager<GameManager>();
+		ServiceLocator.DestroyManager<TutorialManager>();
+	}
+
+	public void OpenMenu(Menu menu)
 	{
 		if (_menus.Count > 0)
 		{
@@ -17,7 +26,7 @@ public class MenuManager : ManagerBase
 		instance.Open();
 	}
 
-	public virtual void CloseMenu()
+	public void CloseMenu()
 	{
 		if (_menus.Count == 0)
 		{
@@ -31,7 +40,7 @@ public class MenuManager : ManagerBase
 		_menus.Peek().gameObject.SetActive(true);
 	}
 
-	public virtual void CloseAllMenus()
+	public void CloseAllMenus()
 	{
 		while (_menus.Count > 0)
 		{

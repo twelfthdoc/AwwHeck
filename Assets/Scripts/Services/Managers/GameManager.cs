@@ -25,7 +25,7 @@ public class GameManager : ManagerBase
 	private static bool _validBid;
 	private Coroutine _animateLabels;
 
-	public virtual void Awake()
+	public virtual void Start()
 	{
 		// Create New Scoring Singleton
 		ServiceLocator.GetSingleton<Scoring>();

@@ -8,16 +8,15 @@ public class TutorialManager : GameManager
 {
 	public GameObject message;
 
-	public bool SendNextMessage { get; set; }
+	public bool SendNextMessage { get; set; } = false;
 
 	private bool _inSetup = true;
 
-	public override void Awake()
+	public override void Start()
 	{
 		GameMode ??= "Tutorial";
-		ServiceLocator.GetSingleton<TutorialMessages>();
 		StartCoroutine(ServiceLocator.GetSingleton<TutorialMessages>().UpdateMessage());
-		base.Awake();
+		base.Start();
 	}
 
 	public void Update()
@@ -59,7 +58,11 @@ public class TutorialManager : GameManager
 		AtEndOfGame();
 	}
 
-	public void OnDestroy() => ServiceLocator.DestroySingleton<TutorialMessages>();
+	public void OnDestroy()
+	{
+		StopAllCoroutines();
+		ServiceLocator.DestroySingleton<TutorialMessages>();
+	}
 
 	#region Helper Methods
 	public IEnumerator SendMessage()
