@@ -9,7 +9,7 @@ public abstract class Menu : MonoBehaviour
 
 	public virtual void Close()
 	{
-		Destroy(this);
+		Destroy(gameObject);
 	}
 
 	public virtual void OpenMenu(Menu menu) => ServiceLocator.GetManager<MenuManager>().OpenMenu(menu);
