@@ -1,4 +1,6 @@
-﻿public class SettingsMenu : Menu
+﻿using UnityEngine.UI;
+
+public class SettingsMenu : Menu
 {
 	public bool displayTenAsLetter;
 
@@ -6,11 +8,13 @@
 	{
 		ServiceLocator.GetSingleton<Settings>().Load();
 		displayTenAsLetter = ServiceLocator.GetSingleton<Settings>().displayTenAsLetter;
+		gameObject.GetComponentInChildren<Toggle>().isOn = displayTenAsLetter;
 	}
 
 	public void ToggleCardDisplayControl()
 	{
 		displayTenAsLetter = !displayTenAsLetter;
+		gameObject.GetComponentInChildren<Toggle>().isOn = displayTenAsLetter;
 	}
 
 	public override void ToPreviousMenu()
