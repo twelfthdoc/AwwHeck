@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-//using System.Threading.Tasks;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -15,12 +14,14 @@ public class RoundManager : ManagerBase
 	public int dealerId;
 	public int forehand;
 	public int nextPlayer;
+	public int winningPlayer;
 	public int tricksPlayed = 0;
 
 	private CardSuit? _suitLed;
 	private bool _biddingInProgress = false;
 	private bool _waitingForBids = true;
 	private readonly WaitForSeconds _timeDelay = new(1.0f);
+	private readonly WaitForSecondsRealtime _realtimeDelay = new(1.0f);
 
 	public IList<Hand> Hands { get; set; }
 
@@ -51,7 +52,9 @@ public class RoundManager : ManagerBase
 		StartCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardEast());
 	}
 
-	public void Update()
+	
+
+	public void FixedUpdate()
 	{
 		if (_suitLed == null && Hands.First(h => h.Id == forehand).transform.Find("PlayedCard").childCount != 0)
 		{
@@ -60,9 +63,7 @@ public class RoundManager : ManagerBase
 
 		if (Hands.All(h => h.transform.Find("PlayedCard").childCount > 0))
 		{
-			var winningPlayer = EvaluateTrick();
-			ServiceLocator.GetSingleton<Scoring>().TrickWon(winningPlayer);
-			DestroyPlayedCards();
+			StartCoroutine(EvaluateTrick());
 			return;
 		}
 
@@ -145,8 +146,10 @@ public class RoundManager : ManagerBase
 
 	public CardSuit? SuitToFollow() => _suitLed;
 
-	public int EvaluateTrick()
+	public IEnumerator EvaluateTrick()
 	{
+		Time.timeScale = 0.0f;
+
 		var hands = ServiceLocator.GetManager<GameManager>().Hands;
 		var cards = new Card[4];
 
@@ -158,15 +161,18 @@ public class RoundManager : ManagerBase
 		}
 
 		var winningCard = cards.GetHighestCard();
-		var winningPlayer = Array.IndexOf(cards, winningCard);
+		winningPlayer = Array.IndexOf(cards, winningCard);
 		tricksPlayed++;
 
 		forehand = winningPlayer;
 		nextPlayer = winningPlayer;
 		_suitLed = null;
 
-		//await Awaitable.WaitForSecondsAsync(1.0f);	// Does NOT play nice with GameManager.AnimateText()!!
-		return winningPlayer;
+		yield return _realtimeDelay;
+		Time.timeScale = 1.0f;
+
+		DestroyPlayedCards();
+		ServiceLocator.GetSingleton<Scoring>().TrickWon(winningPlayer);
 	}
 
 	public void DestroyPlayedCards()

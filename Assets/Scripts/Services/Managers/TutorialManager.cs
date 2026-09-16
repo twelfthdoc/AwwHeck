@@ -28,6 +28,13 @@ public class TutorialManager : GameManager
 		}
 	}
 
+	public new void OnDestroy()
+	{
+		StopAllCoroutines();
+		ServiceLocator.DestroySingleton<TutorialMessages>();
+		ServiceLocator.DestroyManager<TutorialManager>();
+	}
+
 	public IEnumerator Setup()
 	{
 		yield return SendMessage();
@@ -56,12 +63,6 @@ public class TutorialManager : GameManager
 
 		// Start close down
 		AtEndOfGame();
-	}
-
-	public void OnDestroy()
-	{
-		StopAllCoroutines();
-		ServiceLocator.DestroySingleton<TutorialMessages>();
 	}
 
 	#region Helper Methods
