@@ -52,7 +52,8 @@ public class GameManager : ManagerBase
 				break;
 		}
 
-		Deck = Instantiate(deckPrefab, new Vector3(360, 173), Quaternion.identity, FindFirstObjectByType<Canvas>().transform);
+		Deck = Instantiate(deckPrefab, FindFirstObjectByType<Canvas>().transform);
+		Deck.transform.localPosition = new Vector3(-475.0f, -269.0f);
 		Deck.transform.localScale = new Vector3(0.75f, 0.75f);
 		Deck.name = deckPrefab.name;
 		Deck.transform.SetSiblingIndex(Deck.transform.parent.childCount - 2);
@@ -198,6 +199,11 @@ public class GameManager : ManagerBase
 
 		// Return to Main Menu
 		SceneManager.LoadScene("MainMenu");
+	}
+
+	public void OnDestroy()
+	{
+		ServiceLocator.DestroyManager<GameManager>();
 	}
 
 	public void OrderHands()

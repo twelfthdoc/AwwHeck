@@ -48,11 +48,7 @@ public static class ServiceLocator
 		if (Managers.ContainsKey(key))
 		{
 			var instance = Object.FindFirstObjectByType<T>();
-			if (instance == null)
-			{
-				Debug.LogWarning($"Tried to destroy manager of Type {key}, but it does not exist!");
-			}
-			else
+			if (instance != null)
 			{
 				Object.Destroy(instance.gameObject);
 			}

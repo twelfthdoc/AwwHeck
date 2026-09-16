@@ -9,9 +9,11 @@ public class MenuManager : ManagerBase
 	{
 		var mainMenu = GetComponentInChildren<MainMenu>();
 		_menus.Push(mainMenu);
+	}
 
-		ServiceLocator.DestroyManager<GameManager>();
-		ServiceLocator.DestroyManager<TutorialManager>();
+	public void OnDestroy()
+	{
+		ServiceLocator.DestroyManager<MenuManager>();
 	}
 
 	public void OpenMenu(Menu menu)
