@@ -16,5 +16,11 @@ public class Message : MonoBehaviour
 		yield break;
 	}
 
-	public void OnDisable() => ServiceLocator.GetManager<TutorialManager>().SendNextMessage = false;
+	public void OnDisable()
+	{
+		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
+		{
+			ServiceLocator.GetManager<TutorialManager>().SendNextMessage = false;
+		}
+	}
 }

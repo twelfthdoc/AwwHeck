@@ -42,6 +42,10 @@ public class GameManager : ManagerBase
 		// GameMode determines hand size and maximum hand size
 		switch (GameMode)
 		{
+			case "UpDown":
+				handSize = 1;
+				_maxHandSize = 5;
+				break;
 			case "Tutorial":
 				handSize = 5;
 				_maxHandSize = 5;
@@ -97,6 +101,19 @@ public class GameManager : ManagerBase
 			if (int.Parse(button.name) <= handSize)
 			{
 				button.interactable = true;
+			}
+		}
+
+		// Not allowed to bid 0 if all other players have bid 0
+		if (Dealer == PlayerPosition.South)
+		{
+			var bids = ServiceLocator.GetSingleton<Scoring>().Bids;
+
+			if (bids[(int)PlayerPosition.West] == 0 &&
+				bids[(int)PlayerPosition.North] == 0 &&
+				bids[(int)PlayerPosition.East] == 0)
+			{
+				biddingButtons.GetComponentsInChildren<Button>().First(b => b.name == "0").interactable = false;
 			}
 		}
 	}
@@ -156,7 +173,7 @@ public class GameManager : ManagerBase
 			textObject.color = Color.green;
 		}
 
-		if (tricksWon == bid -1)
+		if (tricksWon == bid - 1)
 		{
 			textObject.color = Color.yellow;
 		}
@@ -167,6 +184,21 @@ public class GameManager : ManagerBase
 		}
 
 		_animateLabels = StartCoroutine(AnimateText(textObject));
+	}
+
+	public void ResetLabels()
+	{
+		foreach (var hand in Hands)
+		{
+			var textObject = hand.GetComponentsInChildren<TextMeshProUGUI>().First(o => o.name == "Label");
+			textObject.text = $"{(PlayerPosition)hand.Id}\n";
+			textObject.color = Color.white;
+		}
+
+		if (_animateLabels != null)
+		{
+			StopCoroutine(_animateLabels);
+		}
 	}
 
 	public IEnumerator AnimateText(TMP_Text text)
@@ -186,6 +218,20 @@ public class GameManager : ManagerBase
 	}
 
 	public GameObject InstantiateScoreMessagePrefab() => Instantiate(scoringMessagePrefab, FindFirstObjectByType<Canvas>().transform);
+
+	public void UpdateRoundNumber() => RoundNumber++;
+
+	public void UpdateHandSize()
+	{
+		handSize = RoundNumber switch
+		{
+			1 or 12 => 1,
+			2 or 11 => 2,
+			3 or 10 => 3,
+			4 or 9 => 4,
+			_ => _maxHandSize,
+		};
+	}
 
 	// Should only be called at end of game, or when user quits game from submenu
 	public void AtEndOfGame()

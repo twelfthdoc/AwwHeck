@@ -6,7 +6,6 @@ using UnityEngine.UI;
 
 public class CardDeck : MonoBehaviour
 {
-	private readonly IList<Card> newDeck = new List<Card>();
 	private static readonly System.Random seed = new();
 
 	public IList<Card> Cards { get; set; }
@@ -14,17 +13,13 @@ public class CardDeck : MonoBehaviour
 
 	public void Awake()
 	{
-		if (newDeck.Count == 0)
-		{
-			NewDeck();
-		}
-
 		RefreshDeck();
-		ShuffleDeck();
 	}
 
 	private void NewDeck()
 	{
+		Cards = new List<Card>();
+
 		var ranks = Enum.GetValues(typeof(CardRank));
 		var suits = Enum.GetValues(typeof(CardSuit));
 
@@ -37,7 +32,11 @@ public class CardDeck : MonoBehaviour
 		}
 	}
 
-	public void RefreshDeck() => Cards = newDeck;
+	public void RefreshDeck()
+	{
+		NewDeck();
+		ShuffleDeck();
+	}
 
 	public void ShuffleDeck()
 	{
@@ -60,7 +59,7 @@ public class CardDeck : MonoBehaviour
 		cardObject.name = card.ToString();
 		cardObject.GetComponent<Image>().sprite = UpdateCardSprite(rank, suit);
 
-		newDeck.Add(card);
+		Cards.Add(card);
 	}
 
 	public Sprite UpdateCardSprite(CardRank rank, CardSuit suit) =>
@@ -88,8 +87,16 @@ public class CardDeck : MonoBehaviour
 
 		foreach (var hand in ServiceLocator.GetManager<GameManager>().GetHands())
 		{
-			hand.Cards.ToList().AddRange(Cards.Take(handSize));
-			Cards = Cards.Skip(handSize).ToList();
+			foreach (var card in Cards.ToArray()[0..handSize])
+			{
+				Cards.Remove(card);
+				if (!hand.IsPlayer)
+				{
+					card.gameObject.GetComponent<Image>().sprite = ServiceLocator.GetManager<GameManager>().cardBack;
+				}
+
+				hand.AddCard(card);
+			}
 		}
 
 		UpdateTrumpSuit();

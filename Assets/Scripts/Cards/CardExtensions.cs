@@ -1,5 +1,7 @@
-﻿using System;
-using Unity.VisualScripting;
+﻿
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 public static class CardExtensions
 {
@@ -7,15 +9,43 @@ public static class CardExtensions
 
 	public static void UpdateTrumpSuit(this CardSuit newTrumpSuit) => TrumpSuit = newTrumpSuit;
 
-	public static Card GetHighestCard(this Card[] cards) => cards[0].GetHighestCard(cards[1], cards[2], cards[3]);
+	public static Card GetHighestCard(this Card[] cards, int forehand)
+	{
+		var firstIndex = (forehand + 4) % 4;
+		var secondIndex = (firstIndex + 1) % 4;
+		var thirdIndex = (secondIndex + 1) % 4;
+		var fourthIndex = (thirdIndex + 1) % 4;
+
+		return GetHighestCard(cards[firstIndex], cards[secondIndex], cards[thirdIndex], cards[fourthIndex]);
+	}
 
 	// Returns highest card in the trick
 	public static Card GetHighestCard(this Card first, Card second, Card third, Card fourth) =>
 		first.GetHigherCard(second).GetHigherCard(third).GetHigherCard(fourth);
 
+	// Returns highest card for give number of cards
+	public static Card GetHighestCard(this List<Card> cards)
+	{
+		cards = cards.Where(o => o != null).ToList();
+
+		var highest = cards.FirstOrDefault();
+		if (highest == null) return null;
+
+		foreach (var card in cards)
+		{
+			highest = highest.GetHigherCard(card);
+		}
+
+		return highest;
+	}
+
 	// Returns the higher ranked card between two cards
 	public static Card GetHigherCard(this Card left, Card right)
 	{
+		// If either card is null, the other wins by default
+		if (right == null) return left;
+		if (left == null) return right;
+
 		// If only one card is a trump, trumps win
 		if (left.Suit == TrumpSuit && right.Suit != TrumpSuit) return left;
 		if (left.Suit != TrumpSuit && right.Suit == TrumpSuit) return right;

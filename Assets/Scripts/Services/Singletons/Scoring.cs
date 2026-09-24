@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -110,7 +111,7 @@ public class Scoring : SingletonBase
 
 		// Update to show which player is winning
 		var topScore = CurrentScores.First(score => score == CurrentScores.Max());
-		var indices = CurrentScores.Where(o => o == topScore).Select(i => Array.IndexOf(CurrentScores, topScore));
+		var indices = CurrentScores.Where(o => o == topScore).Select(o => Array.IndexOf(CurrentScores, topScore));
 
 		foreach (var player in indices)
 		{
@@ -118,8 +119,27 @@ public class Scoring : SingletonBase
 			messageColumn.color = Color.gold;
 		}
 
+		if (ServiceLocator.GetManager<GameManager>().RoundNumber == 12)
+		{
+			var playerPos = Array.IndexOf(CurrentScores.OrderByDescending(o => o).ToArray(), Scores[(PlayerPosition.South, 12)]);
+			var finalPosition = scoringMessage.transform.Find("FinalPosition").gameObject.GetComponent<TextMeshProUGUI>();
+
+			finalPosition.text = "You finished ";
+			finalPosition.text += playerPos switch
+			{
+				0 => "1st! Congratulations!",
+				1 => "2nd. Better luck next time!",
+				2 => "3rd. Better luck next time!",
+				3 => "4th. Better luck next time!",
+				_ => ""
+			};
+
+			if (playerPos == 0) finalPosition.color = Color.gold;
+		}
+
 		// Wait for Player to dismiss scorebox
 		yield return new WaitUntil(() => !scoringMessage.activeSelf);
+		Object.Destroy(scoringMessage);
 
 		// Await destruction of RoundManager
 		ServiceLocator.DestroyManager<RoundManager>();
@@ -127,6 +147,22 @@ public class Scoring : SingletonBase
 		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
 		{
 			ServiceLocator.GetManager<TutorialManager>().SendFinalMessages();
+		}
+		else
+		{
+			ServiceLocator.GetManager<GameManager>().UpdateRoundNumber();
+			ServiceLocator.GetManager<GameManager>().UpdateHandSize();
+			ServiceLocator.GetManager<GameManager>().ResetLabels();
+
+			if (ServiceLocator.GetManager<GameManager>().RoundNumber > 12)
+			{
+				ServiceLocator.GetManager<GameManager>().AtEndOfGame();
+			}
+			else
+			{
+				ServiceLocator.GetManager<GameManager>().Deck.RefreshDeck();
+				NewRound();
+			}
 		}
 	}
 }
