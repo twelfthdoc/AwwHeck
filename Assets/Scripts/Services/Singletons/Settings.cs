@@ -43,6 +43,8 @@ public class Settings : SingletonBase
 
 	public void Save()
 	{
+		gameMode ??= "UpDown";
+
 		var fields = typeof(Settings).GetFields(~BindingFlags.Default);
 
 		foreach (var field in fields)

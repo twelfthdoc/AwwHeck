@@ -25,7 +25,7 @@ public class RoundManager : ManagerBase
 
 	public IList<Hand> Hands { get; set; }
 
-	public void Awake()
+	public void OnEnable()
 	{
 		if (ServiceLocator.GetManager<GameManager>().RoundNumber == 1)
 		{
@@ -33,7 +33,7 @@ public class RoundManager : ManagerBase
 		}
 		else
 		{
-			dealerId = NextPlayer(dealerId);
+			dealerId = NextPlayer((int)ServiceLocator.GetManager<GameManager>().Dealer);
 		}
 
 		if (ServiceLocator.GetManager<GameManager>().GameMode == "Tutorial")
@@ -47,12 +47,18 @@ public class RoundManager : ManagerBase
 		ServiceLocator.GetManager<GameManager>().UpdateDealer(dealerId);
 		Hands = ServiceLocator.GetManager<GameManager>().Hands.ToList();
 
-		StartCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardWest());
-		StartCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardNorth());
-		StartCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardEast());
+		if (ServiceLocator.GetManager<GameManager>().GameMode != "Tutorial")
+		{
+			ServiceLocator.GetManager<GameManager>().Deck.Deal();
+			ServiceLocator.GetManager<GameManager>().OrderHands();
+		}
+		else
+		{
+			StartCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardWest());
+			StartCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardNorth());
+			StartCoroutine(ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardEast());
+		}
 	}
-
-	
 
 	public void FixedUpdate()
 	{
@@ -69,13 +75,8 @@ public class RoundManager : ManagerBase
 
 		if (!_biddingInProgress)
 		{
-			if (_waitingForBids)
-			{
-				_biddingInProgress = true;
-				StartCoroutine(GetBids());
-				return;
-			}
-
+			if (_waitingForBids) return;
+			
 			if (!waitingForPlayer && !waitingForWest && !waitingForNorth && !waitingForEast)
 			{
 				if (tricksPlayed == ServiceLocator.GetManager<GameManager>().handSize)
@@ -85,8 +86,22 @@ public class RoundManager : ManagerBase
 					StopRound();
 					StartCoroutine(ServiceLocator.GetSingleton<Scoring>().ScoreRound());
 				}
+				else
+				{
+					StartCoroutine(PlayCards());
+				}
+			}
+		}
+	}
 
-				StartCoroutine(PlayCards());
+	public void Update()
+	{
+		if (!_biddingInProgress)
+		{
+			if (_waitingForBids)
+			{
+				_biddingInProgress = true;
+				StartCoroutine(GetBids());
 			}
 		}
 	}
@@ -160,7 +175,7 @@ public class RoundManager : ManagerBase
 			cards[hand.Id] = playedCard;
 		}
 
-		var winningCard = cards.GetHighestCard();
+		var winningCard = cards.GetHighestCard(forehand);
 		winningPlayer = Array.IndexOf(cards, winningCard);
 		tricksPlayed++;
 
@@ -193,22 +208,38 @@ public class RoundManager : ManagerBase
 				{
 					yield return new WaitUntil(() => !ServiceLocator.GetManager<TutorialManager>().message.activeSelf);
 				}
+				yield return new WaitUntil(() => nextPlayer == (int)PlayerPosition.South);
 				yield return Hands.First(o => o.IsPlayer).ToggleCardButtons(waitingForPlayer, _suitLed);
 				yield return new WaitUntil(() => !waitingForPlayer);
 				break;
 
 			case (int)PlayerPosition.West:				
 				waitingForWest = true;
+				if (ServiceLocator.GetManager<GameManager>().GameMode != "Tutorial")
+				{
+					yield return new WaitUntil(() => nextPlayer == (int)PlayerPosition.West);
+					yield return ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardWest();
+				}
 				yield return new WaitUntil(() => !waitingForWest);				
 				break;
 
 			case (int)PlayerPosition.North:				
 				waitingForNorth = true;
+				if (ServiceLocator.GetManager<GameManager>().GameMode != "Tutorial")
+				{
+					yield return new WaitUntil(() => nextPlayer == (int)PlayerPosition.North);
+					yield return ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardNorth();
+				}
 				yield return new WaitUntil(() => !waitingForNorth);
 				break;
 
 			case (int)PlayerPosition.East:
 				waitingForEast = true;
+				if (ServiceLocator.GetManager<GameManager>().GameMode != "Tutorial")
+				{
+					yield return new WaitUntil(() => nextPlayer == (int)PlayerPosition.East);
+					yield return ServiceLocator.GetSingleton<NpcBehaviour>().PlayCardEast();
+				}
 				yield return new WaitUntil(() => !waitingForEast);
 				break;
 		}

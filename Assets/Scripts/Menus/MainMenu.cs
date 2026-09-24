@@ -5,6 +5,12 @@ public class MainMenu : Menu
 {
 	[SerializeField] private Menu settingsMenu;
 
+	private void Awake()
+	{
+		// Ensures default values are saved to PlayerPrefs before first game
+		ServiceLocator.GetSingleton<Settings>().Save();
+	}
+
 	public void StartGame()
 	{
 		ServiceLocator.DestroyManager<MenuManager>();

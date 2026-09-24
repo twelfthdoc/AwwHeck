@@ -20,6 +20,32 @@ public class NpcBehaviour : SingletonBase
 		// Cautious play, will play certain winners in own hand, but not take many chances
 		// Will go for nullo bids more often than the other NPCs
 
+		var hand = ServiceLocator.GetManager<GameManager>().Hands.First(o => o.Id == (int)PlayerPosition.West);
+		var trumpSuit = CardExtensions.TrumpSuit;
+
+		var bids = ServiceLocator.GetSingleton<Scoring>().Bids;
+
+		var allowedToBidZero = ServiceLocator.GetManager<GameManager>().Dealer != PlayerPosition.West ||
+			bids[(int)PlayerPosition.North] != 0 ||
+			bids[(int)PlayerPosition.East] != 0 ||
+			bids[(int)PlayerPosition.South] != 0;
+
+		var points = hand.Cards.Count(o => o.Suit == trumpSuit);
+
+		if (hand.Cards.Count() > 2)
+		{
+			points += hand.Cards.Count(o => o.Suit != trumpSuit && o.Rank > CardRank.Jack);
+		}
+
+		if (points > 3) points--;
+
+		if (points == 0 && !allowedToBidZero)
+		{
+			ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.West, 1);
+			yield break;
+		}
+
+		ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.West, points);
 	}
 
 	public IEnumerator BidNorth()
@@ -32,6 +58,31 @@ public class NpcBehaviour : SingletonBase
 
 		// North NPC behaviour here
 		// Balanced play, tries to win but isn't overambitious
+
+		var hand = ServiceLocator.GetManager<GameManager>().Hands.First(o => o.Id == (int)PlayerPosition.North);
+		var trumpSuit = CardExtensions.TrumpSuit;
+
+		var bids = ServiceLocator.GetSingleton<Scoring>().Bids;
+
+		var allowedToBidZero = ServiceLocator.GetManager<GameManager>().Dealer != PlayerPosition.North ||
+			bids[(int)PlayerPosition.East] != 0 ||
+			bids[(int)PlayerPosition.South] != 0 ||
+			bids[(int)PlayerPosition.West] != 0;
+
+		var points = hand.Cards.Count(o => o.Suit == trumpSuit);
+
+		if (hand.Cards.Count() > 2)
+		{
+			points += hand.Cards.Count(o => o.Suit != trumpSuit && o.Rank > CardRank.Ten);
+		}
+
+		if (points == 0 && !allowedToBidZero)
+		{
+			ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.North, 1);
+			yield break;
+		}
+
+		ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.North, points);
 
 	}
 
@@ -47,6 +98,29 @@ public class NpcBehaviour : SingletonBase
 		// Greedy play, will try to slam a hand if they can get away with it.
 		// Likely prone to overbid
 
+		var hand = ServiceLocator.GetManager<GameManager>().Hands.First(o => o.Id == (int)PlayerPosition.East);
+		var trumpSuit = CardExtensions.TrumpSuit;
+
+		var bids = ServiceLocator.GetSingleton<Scoring>().Bids;
+
+		var allowedToBidZero = ServiceLocator.GetManager<GameManager>().Dealer != PlayerPosition.East ||
+			bids[(int)PlayerPosition.South] != 0 ||
+			bids[(int)PlayerPosition.West] != 0 ||
+			bids[(int)PlayerPosition.North] != 0;
+
+		var points = hand.Cards.Count(o => o.Suit == trumpSuit || o.Rank > CardRank.Ten);
+
+		if (hand.Cards.Count() > 3) points++;
+
+		if (points > hand.Cards.Count()) points = hand.Cards.Count();
+
+		if (points == 0 && !allowedToBidZero)
+		{
+			ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.East, 1);
+			yield break;
+		}
+
+		ServiceLocator.GetSingleton<Scoring>().NewBid(PlayerPosition.East, points);
 	}
 	#endregion
 
@@ -65,23 +139,11 @@ public class NpcBehaviour : SingletonBase
 		var tricksBid = ServiceLocator.GetSingleton<Scoring>().Bids[(int)PlayerPosition.West];
 		var tricksWon = ServiceLocator.GetSingleton<Scoring>().Tricks[(int)PlayerPosition.West];
 
-		var cardsPlayed = PlayerPosition.West.CardsPlayed(roundManager.forehand);
+		var card = SelectCardToPlay(hand, tricksBid, tricksWon);
+		hand.PlayCardFromHand(card);
 
-		// West NPC behaviour here
-		// Cautious play, will play certain winners in own hand, but not take many chances
-		// Will go for nullo bids more often than the other NPCs
-
-		if (cardsPlayed != 0)
-		{
-			var suitToFollow = roundManager.SuitToFollow();
-		}
-		else
-		{
-
-		}
-
-		//yield return _timeDelay;
-		roundManager.GoToNextPlayer();
+		yield return _timeDelay;
+		roundManager.waitingForWest = false;
 	}
 
 	public IEnumerator PlayCardNorth()
@@ -98,22 +160,11 @@ public class NpcBehaviour : SingletonBase
 		var tricksBid = ServiceLocator.GetSingleton<Scoring>().Bids[(int)PlayerPosition.North];
 		var tricksWon = ServiceLocator.GetSingleton<Scoring>().Tricks[(int)PlayerPosition.North];
 
-		var cardsPlayed = PlayerPosition.North.CardsPlayed(roundManager.forehand);
+		var card = SelectCardToPlay(hand, tricksBid, tricksWon);
+		hand.PlayCardFromHand(card);
 
-		// North NPC behaviour here
-		// Balanced play, tries to win but isn't overambitious
-
-		if (cardsPlayed != 0)
-		{
-			var suitToFollow = roundManager.SuitToFollow();
-		}
-		else
-		{
-
-		}
-
-		//yield return _timeDelay;
-		roundManager.GoToNextPlayer();
+		yield return _timeDelay;
+		roundManager.waitingForNorth = false;
 	}
 
 	public IEnumerator PlayCardEast()
@@ -130,25 +181,106 @@ public class NpcBehaviour : SingletonBase
 		var tricksBid = ServiceLocator.GetSingleton<Scoring>().Bids[(int)PlayerPosition.East];
 		var tricksWon = ServiceLocator.GetSingleton<Scoring>().Tricks[(int)PlayerPosition.East];
 
-		var cardsPlayed = PlayerPosition.East.CardsPlayed(roundManager.forehand);
+		var card = SelectCardToPlay(hand, tricksBid, tricksWon);
+		hand.PlayCardFromHand(card);
 
-		// East NPC behaviour here
-		// Greedy play, will try to slam a hand if they can get away with it.
-		// Likely prone to overbid
-
-		if (cardsPlayed != 0)
-		{
-			var suitToFollow = roundManager.SuitToFollow();
-		}
-		else
-		{
-
-		}
-
-		//yield return _timeDelay;
-		roundManager.GoToNextPlayer();
+		yield return _timeDelay;
+		roundManager.waitingForEast = false;
 	}
 	#endregion
+
+	public Card SelectCardToPlay(Hand hand, int tricksBid, int tricksWon)
+	{
+		var cards = hand.Cards;
+
+		var playedCards = ServiceLocator.GetManager<GameManager>().Hands.Select(o => o.transform.Find("PlayedCard").gameObject.GetComponentsInChildren<Card>().FirstOrDefault()).ToList();
+
+		// If there isn't exactly one card left in hand
+		if (cards.Count != 1)
+		{
+			// If no-one has yet played a card
+			if (playedCards.All(o => o == null))
+			{
+				if (tricksWon < tricksBid)
+				{
+					cards = cards.OrderByDescending(o => o.Rank).ToList();
+				}
+				else
+				{
+					cards = cards.OrderBy(o => o.Rank).ToList();
+				}
+			}
+			// If someone has played a card
+			else
+			{
+				var suitToFollow = ServiceLocator.GetManager<RoundManager>().SuitToFollow();
+				var winningCard = playedCards.GetHighestCard();
+
+				// If there are cards in the led suit
+				if (cards.Any(o => o.Suit == suitToFollow))
+				{
+					// If they're trying to win
+					cards = cards.Where(o => o.Suit == suitToFollow).OrderByDescending(o => o.Rank).ToList();
+
+					// If they're trying to discard
+					if (tricksWon >= tricksBid)
+					{
+						cards = cards.Where(o => o.Suit == suitToFollow).OrderBy(o => o.Rank).ToList();
+					}
+				}
+				// If there are any trumps and winning card is not a trump
+				else if (cards.Any(o => o.Suit == CardExtensions.TrumpSuit) && winningCard.Suit != CardExtensions.TrumpSuit)
+				{
+					// If they're still trying to win
+					if (tricksWon < tricksBid)
+					{
+						cards = cards.Where(o => o.Suit == CardExtensions.TrumpSuit).OrderBy(o => o.Rank).ToList();
+					}
+					// If they're trying to discard
+					else
+					{
+						cards = cards.OrderByDescending(o => o.Rank).ToList();
+					}
+				}
+				// If there are any trumps and the winning card is a trump
+				else if (cards.Any(o => o.Suit == CardExtensions.TrumpSuit) && winningCard.Suit == CardExtensions.TrumpSuit)
+				{
+					// If they're still trying to win
+					if (cards.Any(o => o.Suit == CardExtensions.TrumpSuit && o.Rank > winningCard.Rank))
+					{
+						cards = cards.Where(o => o.Rank > winningCard.Rank).OrderBy(o => o.Rank).ToList();
+					}
+					// If they're trying to discard
+					else
+					{
+						cards = cards.Where(o => o.Rank < winningCard.Rank).OrderByDescending(o => o.Rank).ToList();
+					}
+				}
+				// If there are only discards
+				else
+				{
+					// If they want to discard
+					cards = cards.OrderByDescending(o => o.Rank).ToList();
+
+					// If they're still trying to win
+					if (tricksWon < tricksBid)
+					{
+						cards = cards.OrderBy(o => o.Rank).ToList();
+					}
+				}
+			}
+		}
+
+		// Failsafe after the above methods
+		if (cards.Count == 0)
+		{
+			// Really should not drop into this case!
+			Debug.LogWarning($"Algorithm failed for {hand.name}!");
+			cards = hand.Cards.OrderBy(o => o.Rank).ToList();
+		}
+
+		return cards.First();
+	}
 
 	#region Tutorial Methods
 	private IEnumerator PlayCardWestTutorial(Hand west)
